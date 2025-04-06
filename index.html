@@ -1,12 +1,277 @@
-<!-- ファイル名：index.html -->
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>My First GitHub Page</title>
-  </head>
-  <body>
-    <h1>Hello, world!</h1>
-    <p>This is my first GitHub Pages site.</p>
-  </body>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>算数トレーニング</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* カスタムスタイル（必要に応じて） */
+        body {
+            font-family: 'Inter', sans-serif; /* Tailwindのデフォルトフォントファミリーを使用 */
+        }
+        /* 入力欄の矢印を非表示にする (数値入力用) */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-r from-blue-100 to-purple-100 flex justify-center items-center min-h-screen p-4">
+
+    <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg w-full max-w-lg text-center">
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-6">算数トレーニング (小6レベル)</h1>
+
+        <div id="score-area" class="mb-6 text-xl font-semibold text-gray-700">
+            スコア: <span id="score" class="text-blue-600">0</span> / <span id="total-questions">0</span>
+        </div>
+
+        <div id="question-area" class="mb-6 p-4 bg-gray-100 rounded-lg min-h-[80px] flex items-center justify-center">
+            <p id="question" class="text-xl md:text-2xl font-semibold text-gray-900"></p>
+        </div>
+
+        <div id="answer-area" class="mb-6">
+            <label for="answer" class="block text-lg text-gray-700 mb-2">答えを入力してください:</label>
+            <input type="text" id="answer" placeholder="例: 5/6 や 1.2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-lg text-center">
+            <p class="text-sm text-gray-500 mt-1">※分数は「分子/分母」の形で入力してください。</p>
+        </div>
+
+        <div id="button-area" class="flex flex-col sm:flex-row justify-center gap-4">
+            <button id="submit-button" class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg transition duration-200 ease-in-out shadow focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75">
+                こたえ合わせ
+            </button>
+            <button id="next-button" class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg transition duration-200 ease-in-out shadow focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 hidden">
+                つぎの問題へ
+            </button>
+        </div>
+
+        <div id="feedback" class="mt-6 text-lg font-semibold min-h-[30px]">
+            </div>
+
+        <div id="end-message" class="mt-6 text-xl font-bold text-purple-600 hidden">
+            </div>
+
+    </div>
+
+    <script>
+        // --- 設定 ---
+        const questions = [
+            // まずは簡単な同分母の分数の足し算
+            { question: "1/5 + 2/5 = ?", answer: "3/5" },
+            { question: "2/7 + 3/7 = ?", answer: "5/7" },
+            { question: "1/9 + 4/9 = ?", answer: "5/9" },
+            // 次に異分母の分数の足し算
+            { question: "1/2 + 1/3 = ?", answer: "5/6" },
+            { question: "1/4 + 2/3 = ?", answer: "11/12" },
+            { question: "2/5 + 1/2 = ?", answer: "9/10" },
+            // 約分が必要な問題
+            { question: "1/6 + 1/6 = ?", answer: "1/3" }, // 2/6 -> 1/3
+            { question: "1/4 + 1/4 = ?", answer: "1/2" }, // 2/4 -> 1/2
+            // 小数の足し算
+            { question: "0.3 + 0.5 = ?", answer: "0.8" },
+            { question: "1.2 + 0.9 = ?", answer: "2.1" },
+            // TODO: 他の小6レベルの問題（引き算、掛け算、割り算、図形、割合など）を追加
+        ];
+
+        // --- 要素の取得 ---
+        const questionElement = document.getElementById('question');
+        const answerElement = document.getElementById('answer');
+        const submitButton = document.getElementById('submit-button');
+        const nextButton = document.getElementById('next-button');
+        const feedbackElement = document.getElementById('feedback');
+        const scoreElement = document.getElementById('score');
+        const totalQuestionsElement = document.getElementById('total-questions');
+        const endMessageElement = document.getElementById('end-message');
+
+        // --- 状態変数 ---
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let shuffledQuestions = []; // シャッフルされた問題リスト
+
+        // --- 関数 ---
+
+        /**
+         * 最大公約数 (GCD) を計算する関数 (ユークリッドの互除法)
+         * @param {number} a
+         * @param {number} b
+         * @returns {number} 最大公約数
+         */
+        function gcd(a, b) {
+            return b === 0 ? a : gcd(b, a % b);
+        }
+
+        /**
+         * 分数文字列を約分する関数
+         * @param {string} fractionStr - "分子/分母" 形式の文字列
+         * @returns {string} 約分された分数文字列、または不正な形式の場合は元の文字列
+         */
+        function simplifyFraction(fractionStr) {
+            if (typeof fractionStr !== 'string' || !fractionStr.includes('/')) {
+                return fractionStr; // 分数形式でない場合はそのまま返す
+            }
+            const parts = fractionStr.split('/');
+            if (parts.length !== 2) return fractionStr; // 不正な形式
+
+            const numerator = parseInt(parts[0], 10);
+            const denominator = parseInt(parts[1], 10);
+
+            if (isNaN(numerator) || isNaN(denominator) || denominator === 0) {
+                return fractionStr; // 数値でない、または分母が0
+            }
+
+            if (numerator === 0) return "0"; // 分子が0の場合
+
+            const commonDivisor = gcd(Math.abs(numerator), Math.abs(denominator));
+            const simplifiedNumerator = numerator / commonDivisor;
+            const simplifiedDenominator = denominator / commonDivisor;
+
+            // 分母が1になった場合は整数として返す
+            if (simplifiedDenominator === 1) {
+                return simplifiedNumerator.toString();
+            }
+            // 分母がマイナスの場合、分子に符号を移動
+            if (simplifiedDenominator < 0) {
+                 return `${-simplifiedNumerator}/${-simplifiedDenominator}`;
+            }
+
+            return `${simplifiedNumerator}/${simplifiedDenominator}`;
+        }
+
+
+        /**
+         * 配列をシャッフルする関数 (Fisher-Yatesアルゴリズム)
+         * @param {Array} array - シャッフルしたい配列
+         * @returns {Array} シャッフルされた新しい配列
+         */
+        function shuffleArray(array) {
+            const shuffled = [...array]; // 元の配列をコピー
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; // 要素を交換
+            }
+            return shuffled;
+        }
+
+        /**
+         * 問題を読み込んで表示する関数
+         */
+        function loadQuestion() {
+            if (currentQuestionIndex < shuffledQuestions.length) {
+                const currentQuestion = shuffledQuestions[currentQuestionIndex];
+                questionElement.textContent = currentQuestion.question;
+                answerElement.value = ''; // 入力欄をクリア
+                feedbackElement.textContent = ''; // フィードバックをクリア
+                feedbackElement.className = 'mt-6 text-lg font-semibold min-h-[30px]'; // スタイルをリセット
+                answerElement.disabled = false; // 入力欄を有効化
+                submitButton.classList.remove('hidden'); // こたえ合わせボタンを表示
+                nextButton.classList.add('hidden'); // 次へボタンを非表示
+                answerElement.focus(); // 入力欄にフォーカス
+            } else {
+                // 全ての問題が終了した場合
+                showFinalScore();
+            }
+        }
+
+        /**
+         * 最終スコアを表示する関数
+         */
+        function showFinalScore() {
+            questionElement.textContent = '';
+            answerElement.classList.add('hidden'); // 入力欄を非表示
+            document.getElementById('answer-area').classList.add('hidden'); // ラベル等も非表示
+            submitButton.classList.add('hidden');
+            nextButton.classList.add('hidden');
+            feedbackElement.classList.add('hidden');
+            endMessageElement.textContent = `終了！ ${shuffledQuestions.length}問中 ${score}問正解でした！`;
+            endMessageElement.classList.remove('hidden');
+        }
+
+        /**
+         * 解答をチェックする関数
+         */
+        function checkAnswer() {
+            const userAnswerRaw = answerElement.value.trim().replace(/／/g, '/'); // 全角スラッシュを半角に
+            const correctAnswerRaw = shuffledQuestions[currentQuestionIndex].answer;
+
+            // 回答と正解を比較しやすい形に正規化（ここでは約分を試みる）
+            const userAnswerNormalized = simplifyFraction(userAnswerRaw);
+            const correctAnswerNormalized = simplifyFraction(correctAnswerRaw);
+
+            // 小数点を含むかチェックし、含む場合は数値として比較（誤差を許容）
+            const isDecimalAnswer = correctAnswerNormalized.includes('.');
+            let isCorrect = false;
+
+            if (isDecimalAnswer) {
+                const userAnswerNum = parseFloat(userAnswerRaw); // 小数入力はそのまま数値に
+                const correctAnswerNum = parseFloat(correctAnswerNormalized);
+                 // 浮動小数点数の比較は誤差を考慮する
+                isCorrect = !isNaN(userAnswerNum) && Math.abs(userAnswerNum - correctAnswerNum) < 0.00001;
+            } else {
+                 // 分数または整数の場合は、約分後の文字列で比較
+                isCorrect = userAnswerNormalized === correctAnswerNormalized;
+            }
+
+
+            answerElement.disabled = true; // 判定後は入力不可に
+            submitButton.classList.add('hidden'); // こたえ合わせボタンを隠す
+            nextButton.classList.remove('hidden'); // 次へボタンを表示
+
+            if (isCorrect) {
+                score++;
+                feedbackElement.textContent = '正解！🎉';
+                feedbackElement.className = 'mt-6 text-lg font-semibold min-h-[30px] text-green-600';
+            } else {
+                feedbackElement.textContent = `残念！ 正解は ${correctAnswerRaw} でした。`;
+                feedbackElement.className = 'mt-6 text-lg font-semibold min-h-[30px] text-red-600';
+            }
+
+            scoreElement.textContent = score; // スコア表示を更新
+        }
+
+        /**
+         * 次の問題へ進む関数
+         */
+        function nextQuestion() {
+            currentQuestionIndex++;
+            loadQuestion();
+        }
+
+        /**
+         * アプリを初期化する関数
+         */
+        function init() {
+            currentQuestionIndex = 0;
+            score = 0;
+            shuffledQuestions = shuffleArray(questions); // 問題をシャッフル
+            scoreElement.textContent = score;
+            totalQuestionsElement.textContent = shuffledQuestions.length; // 総問題数を表示
+            endMessageElement.classList.add('hidden'); // 終了メッセージを隠す
+            answerElement.classList.remove('hidden'); // 入力欄を表示
+            document.getElementById('answer-area').classList.remove('hidden');
+            feedbackElement.classList.remove('hidden'); // フィードバックエリアを表示
+            loadQuestion(); // 最初の問題を読み込む
+        }
+
+        // --- イベントリスナー ---
+        submitButton.addEventListener('click', checkAnswer);
+        nextButton.addEventListener('click', nextQuestion);
+
+        // Enterキーでも解答をチェックできるようにする
+        answerElement.addEventListener('keypress', function(event) {
+            // submitボタンが表示されている場合のみEnterを有効にする
+            if (event.key === 'Enter' && !submitButton.classList.contains('hidden')) {
+                checkAnswer();
+            }
+        });
+
+        // --- アプリケーション開始 ---
+        init();
+
+    </script>
+
+</body>
 </html>
