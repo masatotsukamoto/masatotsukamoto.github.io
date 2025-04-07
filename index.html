@@ -11,10 +11,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <style>
         /* 基本的なスタイル */
+        html, body {
+             height: 100%; /* Ensure html and body can take full height */
+             overflow-x: hidden; /* Prevent horizontal scroll */
+        }
         body {
             font-family: 'Inter', 'M PLUS Rounded 1c', sans-serif;
-            /* スマートフォンでのプルダウン更新を無効化 */
-            overscroll-behavior: none;
+            overscroll-behavior-y: contain; /* Prevent pull-to-refresh vertically */
+            /* Use flexbox on body to center content vertically */
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center horizontally */
+            justify-content: center; /* Center vertically */
+            padding-top: 1rem; /* Add some padding at the top */
+            padding-bottom: 1rem; /* Add padding at the bottom */
         }
         /* Canvasのスタイル */
         canvas {
@@ -24,57 +34,104 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             border-radius: 12px;
             cursor: default;
+            max-width: 100%;
+            /* height: auto; will be set by JS */
+            flex-shrink: 0; /* Prevent canvas from shrinking too much */
         }
         /* 実際の入力フィールドを画面外に隠す */
         #hidden-input {
             position: absolute;
             left: -9999px;
             top: -9999px;
-            opacity: 0; /* 透明にする */
-            pointer-events: none; /* イベントを受け付けない */
+            opacity: 0;
+            pointer-events: none;
         }
         /* ボタンの最小幅を設定 */
         .control-button {
-            min-width: 120px;
+            min-width: 110px; /* Slightly smaller min-width for smaller screens */
+            padding: 0.5rem 0.8rem; /* Adjust padding */
+            font-size: 0.9rem; /* Adjust font size */
         }
-        /* Tailwind CSSクラスはHTML内で直接使用 */
+        /* Ensure controls wrap nicely */
+        #controls {
+            width: 100%;
+            max-width: 600px; /* Match max canvas width */
+            padding: 0 1rem; /* Add padding on smaller screens */
+            box-sizing: border-box;
+            margin-top: 0.75rem; /* Reduced margin-top */
+            flex-shrink: 0; /* Prevent controls from shrinking */
+        }
+        /* Adjust select size */
+        #num-questions {
+            padding: 0.4rem 0.6rem;
+            font-size: 0.9rem;
+        }
+        /* Adjust header size */
+        h1 {
+             font-size: 1.5rem; /* md:text-3xl equivalent */
+             margin-bottom: 0.5rem; /* Reduced margin */
+        }
+        #stats-area {
+            margin-bottom: 0.5rem; /* Reduced margin */
+            min-height: 1.5rem; /* Ensure space even when empty */
+        }
+        @media (min-width: 768px) { /* md breakpoint */
+            h1 {
+                font-size: 1.875rem; /* text-3xl */
+                margin-bottom: 1rem; /* Restore margin */
+            }
+             #stats-area {
+                margin-bottom: 0.5rem; /* Restore margin */
+            }
+            .control-button {
+                 min-width: 120px;
+                 padding: 0.5rem 1rem;
+                 font-size: 1rem;
+            }
+             #num-questions {
+                padding: 0.25rem 0.75rem; /* py-1 px-3 */
+                font-size: 1rem;
+            }
+             #controls {
+                 margin-top: 1rem; /* Restore margin */
+             }
+        }
+
     </style>
 </head>
-<body class="bg-gradient-to-br from-teal-100 to-cyan-200 flex flex-col justify-center items-center min-h-screen p-4">
+<body class="bg-gradient-to-br from-teal-100 to-cyan-200">
 
-    <div class="w-full max-w-2xl mb-4 text-center">
-        <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4">算数トレーニング Canvas版</h1>
-         <div id="stats-area" class="text-lg font-semibold text-gray-700 mb-2 h-6">
+    <div class="w-full max-w-2xl text-center flex-shrink-0">
+        <h1 class="font-bold text-gray-800">算数トレーニング Canvas版</h1>
+         <div id="stats-area" class="text-base sm:text-lg font-semibold text-gray-700 h-6">
              </div>
     </div>
 
-    <canvas id="mathCanvas" width="600" height="400">
-        お使いのブラウザはCanvasをサポートしていません。古いブラウザをお使いの場合、表示されないことがあります。
+    <canvas id="mathCanvas">
+        お使いのブラウザはCanvasをサポートしていません。
     </canvas>
-    <input type="text" id="hidden-input" autocomplete="off">
-
-    <div id="controls" class="mt-4 flex flex-wrap justify-center gap-3">
-        <div id="settings-controls" class="flex flex-wrap justify-center items-center gap-3">
-            <label for="num-questions" class="text-gray-700 font-medium">問題数:</label>
-            <select id="num-questions" class="rounded-lg border border-gray-300 px-3 py-1 focus:outline-none focus:ring-2 focus:ring-teal-400">
+    <input type="text" id="hidden-input" autocomplete="off" enterkeyhint="done"> <div id="controls" class="flex flex-wrap justify-center gap-2 sm:gap-3">
+        <div id="settings-controls" class="flex flex-wrap justify-center items-center gap-2 sm:gap-3">
+            <label for="num-questions" class="text-gray-700 font-medium text-sm sm:text-base">問題数:</label>
+            <select id="num-questions" class="rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-400">
                 <option value="5">5問</option>
                 <option value="10" selected>10問</option>
                 <option value="15">15問</option>
                 <option value="20">20問</option>
             </select>
-            <button id="start-button" class="control-button bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded-lg transition shadow">スタート</button>
+            <button id="start-button" class="control-button bg-teal-500 hover:bg-teal-600 text-white font-bold rounded-lg transition shadow">スタート</button>
         </div>
-        <div id="training-controls" class="hidden flex flex-wrap justify-center gap-3">
-             <button id="submit-button" class="control-button bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition shadow">こたえ合わせ</button>
-             <button id="next-button" class="control-button bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition shadow hidden">つぎの問題へ</button>
+        <div id="training-controls" class="hidden flex flex-wrap justify-center gap-2 sm:gap-3">
+             <button id="submit-button" class="control-button bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition shadow">こたえ合わせ</button>
+             <button id="next-button" class="control-button bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition shadow hidden">つぎの問題へ</button>
         </div>
-        <div id="end-controls" class="hidden flex flex-wrap justify-center gap-3">
-            <button id="restart-button" class="control-button bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg transition shadow">もう一度</button>
-            <button id="review-button" class="control-button bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg transition shadow">間違いを確認</button>
+        <div id="end-controls" class="hidden flex flex-wrap justify-center gap-2 sm:gap-3">
+            <button id="restart-button" class="control-button bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-lg transition shadow">もう一度</button>
+            <button id="review-button" class="control-button bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg transition shadow">間違いを確認</button>
          </div>
-         <div id="review-controls" class="hidden flex flex-wrap justify-center gap-3">
-             <button id="back-to-start-button" class="control-button bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition shadow">最初の画面へ</button>
-             </div>
+         <div id="review-controls" class="hidden flex flex-wrap justify-center gap-2 sm:gap-3">
+             <button id="back-to-start-button" class="control-button bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg transition shadow">最初の画面へ</button>
+         </div>
     </div>
 
     <script>
@@ -82,9 +139,9 @@
         const canvas = document.getElementById('mathCanvas');
         const ctx = canvas.getContext('2d');
         const hiddenInput = document.getElementById('hidden-input');
-        const statsArea = document.getElementById('stats-area'); // 正答率表示用
+        const statsArea = document.getElementById('stats-area');
 
-        // コントロール要素の取得 (変更なし)
+        // コントロール要素 (変更なし)
         const settingsControls = document.getElementById('settings-controls');
         const trainingControls = document.getElementById('training-controls');
         const endControls = document.getElementById('end-controls');
@@ -99,34 +156,28 @@
 
         // ゲームの状態変数 (変更なし)
         let gameState = 'settings';
-        let currentQuestionIndex = 0;
-        let score = 0;
-        let totalQuestions = 10;
-        let questions = [];
-        let attemptedQuestions = [];
-        let currentAnswer = '';
-        let feedback = { message: '', color: 'black' };
-        let mistakes = [];
+        let currentQuestionIndex = 0; let score = 0; let totalQuestions = 10;
+        let questions = []; let attemptedQuestions = []; let currentAnswer = '';
+        let feedback = { message: '', color: 'black' }; let mistakes = [];
         let reviewScrollOffset = 0;
 
         // 効果音関連 (変更なし)
-        let synth;
-        let isAudioContextStarted = false;
+        let synth; let isAudioContextStarted = false;
 
-        // お祝い演出関連
-        let confettiParticles = []; // 紙吹雪のパーティクル配列
-        let isCelebrating = false; // お祝い演出中かどうかのフラグ
-        let celebrationPlayed = false; // お祝い効果音が再生済みかどうかのフラグ
+        // お祝い演出関連 (変更なし)
+        let confettiParticles = []; let isCelebrating = false; let celebrationPlayed = false;
 
-        // Canvas描画関連の定数 (変更なし)
-        const CANVAS_WIDTH = canvas.width;
-        const CANVAS_HEIGHT = canvas.height;
-        const PROGRESS_Y = 55;
-        const QUESTION_Y = 130;
-        const INPUT_BOX_Y = 190;
-        const INPUT_BOX_HEIGHT = 40;
-        const FEEDBACK_Y = 290;
-        const SCORE_Y = 40;
+        // --- レスポンシブ対応 ---
+        const BASE_CANVAS_WIDTH = 600; // 基準となるCanvas幅
+        const BASE_CANVAS_HEIGHT = 400; // 基準となるCanvas高さ
+        let scale = 1; // 現在の描画スケール
+
+        // Canvas描画関連の基準定数 (変更なし)
+        const BASE_PROGRESS_Y = 55; const BASE_QUESTION_Y = 130; const BASE_INPUT_BOX_Y = 190;
+        const BASE_INPUT_BOX_HEIGHT = 40; const BASE_FEEDBACK_Y = 290;
+        const BASE_FONT_SIZE_XL = 32; const BASE_FONT_SIZE_L = 28; const BASE_FONT_SIZE_M = 24;
+        const BASE_FONT_SIZE_S = 20; const BASE_FONT_SIZE_XS = 18; const BASE_FONT_SIZE_XXS = 16;
+        const BASE_FONT_SIZE_TINY = 14;
 
 
         // --- 計算関連のヘルパー関数 (変更なし) ---
@@ -156,247 +207,133 @@
         // --- Canvas描画関連関数 ---
 
         /** Canvasをクリア */
-        function clearCanvas() {
-            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        }
+        function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); } // (変更なし)
 
-        /** テキストを描画 */
-        function drawText(text, x, y, font = '18px Inter', color = 'black', align = 'center') {
-            ctx.font = font;
-            ctx.fillStyle = color;
-            ctx.textAlign = align;
-            ctx.fillText(text, x, y);
-        }
+        /** テキストを描画 (スケール対応) */
+        function drawText(text, x, y, font = ``, color = 'black', align = 'center') { ctx.font = font; ctx.fillStyle = color; ctx.textAlign = align; ctx.fillText(text, x, y); } // (変更なし)
 
-        /** プログレスバーを描画 */
+        /** プログレスバーを描画 (スケール対応) */
         function drawProgressBar() { // (変更なし)
-            const barWidth = CANVAS_WIDTH * 0.6;
-            const barHeight = 10;
-            const barX = (CANVAS_WIDTH - barWidth) / 2;
+            const barWidth = canvas.width * 0.6; const barHeight = 10 * scale; const barX = (canvas.width - barWidth) / 2;
             const progress = totalQuestions > 0 ? (currentQuestionIndex + (gameState === 'feedback' || gameState === 'finished' ? 1 : 0)) / totalQuestions : 0;
-            ctx.fillStyle = '#e0e0e0';
-            ctx.fillRect(barX, PROGRESS_Y, barWidth, barHeight);
-            ctx.fillStyle = '#4ade80';
-            ctx.fillRect(barX, PROGRESS_Y, barWidth * progress, barHeight);
+            const scaledProgressY = BASE_PROGRESS_Y * scale;
+            ctx.fillStyle = '#e0e0e0'; ctx.fillRect(barX, scaledProgressY, barWidth, barHeight);
+            ctx.fillStyle = '#4ade80'; ctx.fillRect(barX, scaledProgressY, barWidth * progress, barHeight);
              if (totalQuestions > 0 && gameState !== 'settings' && gameState !== 'finished' && gameState !== 'review') {
-                  drawText(`${currentQuestionIndex + 1} / ${totalQuestions} 問目`, CANVAS_WIDTH / 2, PROGRESS_Y + 25, '14px Inter', 'grey');
+                  const scaledFontSize = Math.round(BASE_FONT_SIZE_TINY * scale);
+                  drawText(`${currentQuestionIndex + 1} / ${totalQuestions} 問目`, canvas.width / 2, scaledProgressY + (25 * scale), `${scaledFontSize}px Inter`, 'grey');
              }
         }
 
-        /** 設定画面を描画 */
+        /** 設定画面を描画 (スケール対応) */
         function drawSettingsScreen() { // (変更なし)
-            drawText('設定', CANVAS_WIDTH / 2, 150, '32px "M PLUS Rounded 1c"', 'black');
-            drawText('問題数を選択してスタートボタンを押してください', CANVAS_WIDTH / 2, 200, '18px Inter', 'grey');
+            const scaledFontSizeXL = Math.round(BASE_FONT_SIZE_XL * scale); const scaledFontSizeXS = Math.round(BASE_FONT_SIZE_XS * scale);
+            drawText('設定', canvas.width / 2, 150 * scale, `${scaledFontSizeXL}px "M PLUS Rounded 1c"`, 'black');
+            drawText('問題数を選択してスタートボタンを押してください', canvas.width / 2, 200 * scale, `${scaledFontSizeXS}px Inter`, 'grey');
         }
 
-        /** トレーニング画面を描画 */
+        /** トレーニング画面を描画 (スケール対応) */
         function drawTrainingScreen() { // (変更なし)
-            drawProgressBar();
-            const currentQ = questions[currentQuestionIndex];
-            if (!currentQ) return;
-            drawText(currentQ.question, CANVAS_WIDTH / 2, QUESTION_Y, 'bold 28px "M PLUS Rounded 1c"', '#333');
-            const inputBoxWidth = CANVAS_WIDTH * 0.7;
-            const inputBoxX = (CANVAS_WIDTH - inputBoxWidth) / 2;
-            ctx.strokeStyle = '#a0aec0';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(inputBoxX, INPUT_BOX_Y, inputBoxWidth, INPUT_BOX_HEIGHT);
-            drawText('答え:', inputBoxX - 10, INPUT_BOX_Y + INPUT_BOX_HEIGHT / 2 + 7, '18px Inter', 'black', 'right');
-            drawText(currentAnswer, inputBoxX + 10, INPUT_BOX_Y + INPUT_BOX_HEIGHT / 2 + 7, '20px Inter', 'black', 'left');
+            drawProgressBar(); const currentQ = questions[currentQuestionIndex]; if (!currentQ) return;
+            const scaledQuestionY = BASE_QUESTION_Y * scale; const scaledFontSizeL = Math.round(BASE_FONT_SIZE_L * scale);
+            drawText(currentQ.question, canvas.width / 2, scaledQuestionY, `bold ${scaledFontSizeL}px "M PLUS Rounded 1c"`, '#333');
+            const inputBoxWidth = canvas.width * 0.7; const inputBoxX = (canvas.width - inputBoxWidth) / 2;
+            const scaledInputBoxY = BASE_INPUT_BOX_Y * scale; const scaledInputBoxHeight = BASE_INPUT_BOX_HEIGHT * scale;
+            const scaledFontSizeXS = Math.round(BASE_FONT_SIZE_XS * scale); const scaledFontSizeS = Math.round(BASE_FONT_SIZE_S * scale); const scaledFontSizeTiny = Math.round(BASE_FONT_SIZE_TINY * scale);
+            ctx.strokeStyle = '#a0aec0'; ctx.lineWidth = 1 * scale; ctx.strokeRect(inputBoxX, scaledInputBoxY, inputBoxWidth, scaledInputBoxHeight);
+            drawText('答え:', inputBoxX - (10 * scale), scaledInputBoxY + scaledInputBoxHeight / 2 + (7 * scale), `${scaledFontSizeXS}px Inter`, 'black', 'right');
+            drawText(currentAnswer, inputBoxX + (10 * scale), scaledInputBoxY + scaledInputBoxHeight / 2 + (7 * scale), `${scaledFontSizeS}px Inter`, 'black', 'left');
             if (document.activeElement === hiddenInput && Math.floor(Date.now() / 500) % 2 === 0) {
-                ctx.save();
-                ctx.font = '20px Inter';
-                const textWidth = ctx.measureText(currentAnswer).width;
-                const cursorX = inputBoxX + 10 + textWidth + 2;
-                ctx.fillStyle = 'black';
-                ctx.fillRect(cursorX, INPUT_BOX_Y + 5, 2, INPUT_BOX_HEIGHT - 10);
-                ctx.restore();
+                ctx.save(); ctx.font = `${scaledFontSizeS}px Inter`; const textWidth = ctx.measureText(currentAnswer).width; const cursorX = inputBoxX + (10 * scale) + textWidth + (2 * scale);
+                ctx.fillStyle = 'black'; ctx.fillRect(cursorX, scaledInputBoxY + (5 * scale), 2 * scale, scaledInputBoxHeight - (10 * scale)); ctx.restore();
             }
-             drawText('※ 分数: 3/4, 帯分数: 1と1/2, 小数: 0.5', CANVAS_WIDTH / 2, INPUT_BOX_Y + INPUT_BOX_HEIGHT + 25, '14px Inter', 'grey');
+             drawText('※ 分数: 3/4, 帯分数: 1と1/2, 小数: 0.5', canvas.width / 2, scaledInputBoxY + scaledInputBoxHeight + (25 * scale), `${scaledFontSizeTiny}px Inter`, 'grey');
         }
 
-        /** フィードバック画面を描画 */
+        /** フィードバック画面を描画 (スケール対応) */
         function drawFeedbackScreen() { // (変更なし)
-            drawTrainingScreen();
-            drawText(feedback.message, CANVAS_WIDTH / 2, FEEDBACK_Y, 'bold 20px Inter', feedback.color);
+            drawTrainingScreen(); const scaledFeedbackY = BASE_FEEDBACK_Y * scale; const scaledFontSizeS = Math.round(BASE_FONT_SIZE_S * scale);
+            drawText(feedback.message, canvas.width / 2, scaledFeedbackY, `bold ${scaledFontSizeS}px Inter`, feedback.color);
         }
 
-        // --- お祝い演出（紙吹雪）関連 ---
+        // --- お祝い演出（紙吹雪）関連 (スケール対応) ---
         const confettiColors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800', '#ff5722'];
-
-        /** 紙吹雪パーティクルを生成 */
-        function createConfetti() {
-            confettiParticles = []; // 配列をリセット
-            const numberOfParticles = 100; // 生成する数
+        function createConfetti() { // (変更なし)
+            confettiParticles = []; const numberOfParticles = 100;
             for (let i = 0; i < numberOfParticles; i++) {
-                confettiParticles.push({
-                    x: Math.random() * CANVAS_WIDTH, // 開始X座標 (ランダム)
-                    y: -Math.random() * CANVAS_HEIGHT * 0.5, // 開始Y座標 (画面上部外から)
-                    size: Math.random() * 5 + 3, // サイズ (3〜8)
-                    color: confettiColors[Math.floor(Math.random() * confettiColors.length)], // 色
-                    speedX: Math.random() * 6 - 3, // 横方向の速度 (-3〜3)
-                    speedY: Math.random() * 3 + 2, // 縦方向の初速度 (2〜5)
-                    angle: Math.random() * Math.PI * 2, // 回転角度
-                    angularSpeed: Math.random() * 0.1 - 0.05 // 回転速度
-                });
+                confettiParticles.push({ x: Math.random() * canvas.width, y: -Math.random() * canvas.height * 0.5, size: (Math.random() * 5 + 3) * scale, color: confettiColors[Math.floor(Math.random() * confettiColors.length)], speedX: (Math.random() * 6 - 3) * scale, speedY: (Math.random() * 3 + 2) * scale, angle: Math.random() * Math.PI * 2, angularSpeed: Math.random() * 0.1 - 0.05 });
             }
         }
-
-        /** 紙吹雪の状態を更新 */
-        function updateConfetti() {
-            const gravity = 0.1; // 重力
-            confettiParticles.forEach((p, index) => {
-                p.speedY += gravity; // 重力で加速
-                p.x += p.speedX;
-                p.y += p.speedY;
-                p.angle += p.angularSpeed;
-
-                // 画面外に出たら削除 (配列の後ろから削除するのが安全)
-                // ただし、頻繁な削除はパフォーマンスに影響する可能性あり
-                // ここでは単純化のため、画面下に完全に出たら削除
-                if (p.y > CANVAS_HEIGHT + p.size) {
-                    // confettiParticles.splice(index, 1); // パフォーマンス考慮し、今回は削除しない
-                }
-            });
-            // パーティクルが全て画面外に出たらアニメーション停止フラグを立てる（任意）
-             if (confettiParticles.every(p => p.y > CANVAS_HEIGHT + p.size)) {
-                 // isCelebrating = false; // アニメーションを止める場合
-             }
+        function updateConfetti() { // (変更なし)
+            const gravity = 0.1 * scale; confettiParticles.forEach((p) => { p.speedY += gravity; p.x += p.speedX; p.y += p.speedY; p.angle += p.angularSpeed; });
+             confettiParticles = confettiParticles.filter(p => p.y <= canvas.height + p.size * 5);
+             if (confettiParticles.length === 0) { isCelebrating = false; }
         }
-
-        /** 紙吹雪を描画 */
-        function drawConfetti() {
-            confettiParticles.forEach(p => {
-                ctx.save();
-                ctx.fillStyle = p.color;
-                ctx.translate(p.x + p.size / 2, p.y + p.size / 2); // 回転の中心をパーティクルの中心に
-                ctx.rotate(p.angle);
-                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size); // 中心基準で描画
-                ctx.restore();
-            });
+        function drawConfetti() { // (変更なし)
+            confettiParticles.forEach(p => { ctx.save(); ctx.fillStyle = p.color; ctx.translate(p.x + p.size / 2, p.y + p.size / 2); ctx.rotate(p.angle); ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size); ctx.restore(); });
         }
         // --- 紙吹雪ここまで ---
 
-
-         /** 終了画面を描画 */
-        function drawFinishedScreen() {
-            const finalScoreText = `終了！ ${totalQuestions}問中 ${score}問正解！`;
-            const accuracy = totalQuestions > 0 ? ((score / totalQuestions) * 100) : 0; // 百分率
-            const accuracyText = `最終正答率: ${accuracy.toFixed(1)}%`;
-
-            // --- お祝い演出の開始判定 ---
+         /** 終了画面を描画 (スケール対応) */
+        function drawFinishedScreen() { // (変更なし)
+            const finalScoreText = `終了！ ${totalQuestions}問中 ${score}問正解！`; const accuracy = totalQuestions > 0 ? ((score / totalQuestions) * 100) : 0; const accuracyText = `最終正答率: ${accuracy.toFixed(1)}%`;
             if (accuracy >= 80 && !celebrationPlayed) {
-                isCelebrating = true; // お祝い演出フラグON
-                celebrationPlayed = true; // 効果音再生済みフラグON
-                createConfetti(); // 紙吹雪生成
-
-                // お祝い効果音
-                if (synth && isAudioContextStarted) {
-                    try {
-                         // 簡単な上昇音階
-                         synth.triggerAttackRelease("C5", "8n", Tone.now());
-                         synth.triggerAttackRelease("E5", "8n", Tone.now() + 0.15);
-                         synth.triggerAttackRelease("G5", "8n", Tone.now() + 0.3);
-                         synth.triggerAttackRelease("C6", "4n", Tone.now() + 0.45);
-                    } catch(e) {
-                        console.error("Error playing celebration sound:", e);
-                    }
-                }
+                isCelebrating = true; celebrationPlayed = true; createConfetti();
+                if (synth && isAudioContextStarted) { try { synth.triggerAttackRelease("C5", "8n", Tone.now()); synth.triggerAttackRelease("E5", "8n", Tone.now() + 0.15); synth.triggerAttackRelease("G5", "8n", Tone.now() + 0.3); synth.triggerAttackRelease("C6", "4n", Tone.now() + 0.45); } catch(e) { console.error("Error playing celebration sound:", e); } }
             }
-            // --- お祝い演出ここまで ---
-
-            // 紙吹雪アニメーションの更新と描画 (お祝い中のみ)
-            if (isCelebrating) {
-                updateConfetti();
-                drawConfetti();
+            if (isCelebrating) { updateConfetti(); drawConfetti(); }
+            const scaledFontSizeXL = Math.round(BASE_FONT_SIZE_XL * scale); const scaledFontSizeM = Math.round(BASE_FONT_SIZE_M * scale); const scaledFontSizeXXS = Math.round(BASE_FONT_SIZE_XXS * scale); const scaledFontSizeXS = Math.round(BASE_FONT_SIZE_XS * scale);
+            drawText('お疲れ様でした！', canvas.width / 2, 120 * scale, `${scaledFontSizeXL}px "M PLUS Rounded 1c"`, 'black');
+            drawText(finalScoreText, canvas.width / 2, 180 * scale, `${scaledFontSizeM}px Inter`, '#4a5568');
+            drawText(accuracyText, canvas.width / 2, 220 * scale, `${scaledFontSizeM}px Inter`, '#4a5568');
+            if (mistakes.length > 0) { drawText(`(${mistakes.length}問の間違いがありました)`, canvas.width / 2, 260 * scale, `${scaledFontSizeXXS}px Inter`, 'grey'); }
+            else { drawText('全問正解です！素晴らしい！ 🎉', canvas.width / 2, 260 * scale, `${scaledFontSizeXS}px Inter`, 'green');
+                 if (!celebrationPlayed) { isCelebrating = true; celebrationPlayed = true; createConfetti(); if (synth && isAudioContextStarted) { try { synth.triggerAttackRelease("C5", "8n", Tone.now()); synth.triggerAttackRelease("E5", "8n", Tone.now() + 0.15); synth.triggerAttackRelease("G5", "8n", Tone.now() + 0.3); synth.triggerAttackRelease("C6", "4n", Tone.now() + 0.45); } catch(e) { console.error("Error playing sound:", e); } } }
             }
-
-            // テキスト描画 (紙吹雪の上に描画されるように後から描画)
-            drawText('お疲れ様でした！', CANVAS_WIDTH / 2, 120, '32px "M PLUS Rounded 1c"', 'black');
-            drawText(finalScoreText, CANVAS_WIDTH / 2, 180, '24px Inter', '#4a5568');
-            drawText(accuracyText, CANVAS_WIDTH / 2, 220, '24px Inter', '#4a5568');
-
-            if (mistakes.length > 0) {
-                 drawText(`(${mistakes.length}問の間違いがありました)`, CANVAS_WIDTH / 2, 260, '16px Inter', 'grey');
-            } else {
-                 drawText('全問正解です！素晴らしい！ 🎉', CANVAS_WIDTH / 2, 260, '18px Inter', 'green');
-                 // 全問正解でもお祝い演出を開始（80%以上なので必ずtrueになるはずだが念のため）
-                 if (!celebrationPlayed) {
-                     isCelebrating = true;
-                     celebrationPlayed = true;
-                     createConfetti();
-                     // 効果音も（重複再生防止は celebrationPlayed フラグで管理）
-                     if (synth && isAudioContextStarted) {
-                        try {
-                             synth.triggerAttackRelease("C5", "8n", Tone.now());
-                             synth.triggerAttackRelease("E5", "8n", Tone.now() + 0.15);
-                             synth.triggerAttackRelease("G5", "8n", Tone.now() + 0.3);
-                             synth.triggerAttackRelease("C6", "4n", Tone.now() + 0.45);
-                        } catch(e) { console.error("Error playing sound:", e); }
-                     }
-                 }
-            }
-
-            // お祝い演出中はアニメーションを継続
-            if (isCelebrating) {
-                requestAnimationFrame(draw);
-            }
+            if (isCelebrating) { requestAnimationFrame(draw); }
         }
 
-        /** レビュー画面を描画 */
+        /** レビュー画面を描画 (スケール対応) */
         function drawReviewScreen() { // (変更なし)
-            drawText('間違いの確認', CANVAS_WIDTH / 2, 40, '24px "M PLUS Rounded 1c"', 'black');
-            if (mistakes.length === 0) {
-                drawText('間違えた問題はありませんでした。', CANVAS_WIDTH / 2, 150, '18px Inter', 'green');
-                return;
-            }
-            const itemHeight = 85; const startY = 80; const contentWidth = CANVAS_WIDTH * 0.9; const startX = (CANVAS_WIDTH - contentWidth) / 2;
-             ctx.save(); ctx.beginPath(); ctx.rect(0, startY - 10, CANVAS_WIDTH, CANVAS_HEIGHT - startY - 20); ctx.clip();
+            const scaledFontSizeM = Math.round(BASE_FONT_SIZE_M * scale); const scaledFontSizeXS = Math.round(BASE_FONT_SIZE_XS * scale); const scaledFontSizeXXS = Math.round(BASE_FONT_SIZE_XXS * scale);
+            drawText('間違いの確認', canvas.width / 2, 40 * scale, `${scaledFontSizeM}px "M PLUS Rounded 1c"`, 'black');
+            if (mistakes.length === 0) { drawText('間違えた問題はありませんでした。', canvas.width / 2, 150 * scale, `${scaledFontSizeXS}px Inter`, 'green'); return; }
+            const itemHeight = 85 * scale; const startY = 80 * scale; const contentWidth = canvas.width * 0.9; const startX = (canvas.width - contentWidth) / 2; const reviewAreaTop = startY - (10 * scale); const reviewAreaHeight = canvas.height - startY - (20 * scale);
+             ctx.save(); ctx.beginPath(); ctx.rect(0, reviewAreaTop, canvas.width, reviewAreaHeight); ctx.clip();
              const drawStartY = startY - reviewScrollOffset;
             mistakes.forEach((mistake, index) => {
-                const yPos = drawStartY + index * itemHeight;
-                 if (yPos + itemHeight < startY - 10 || yPos > CANVAS_HEIGHT - 10) { return; }
-                ctx.fillStyle = index % 2 === 0 ? '#f7fafc' : '#edf2f7';
-                ctx.fillRect(startX, yPos, contentWidth, itemHeight - 5);
-                drawText(`問題 ${mistake.index + 1}: ${mistake.questionObj.question}`, startX + 10, yPos + 20, '16px "M PLUS Rounded 1c"', '#2d3748', 'left');
-                drawText(`あなたの答え: ${mistake.userAnswerRaw}`, startX + 15, yPos + 45, '16px Inter', '#e53e3e', 'left');
-                drawText(`正解: ${formatAnswer(mistake.correctAnswer)}`, startX + 15, yPos + 70, '16px Inter', '#38a169', 'left');
+                const yPos = drawStartY + index * itemHeight; if (yPos + itemHeight < reviewAreaTop || yPos > reviewAreaTop + reviewAreaHeight) { return; }
+                ctx.fillStyle = index % 2 === 0 ? '#f7fafc' : '#edf2f7'; ctx.fillRect(startX, yPos, contentWidth, itemHeight - (5 * scale));
+                const textY1 = yPos + (20 * scale); const textY2 = yPos + (45 * scale); const textY3 = yPos + (70 * scale);
+                drawText(`問題 ${mistake.index + 1}: ${mistake.questionObj.question}`, startX + (10 * scale), textY1, `${scaledFontSizeXXS}px "M PLUS Rounded 1c"`, '#2d3748', 'left');
+                drawText(`あなたの答え: ${mistake.userAnswerRaw}`, startX + (15 * scale), textY2, `${scaledFontSizeXXS}px Inter`, '#e53e3e', 'left');
+                drawText(`正解: ${formatAnswer(mistake.correctAnswer)}`, startX + (15 * scale), textY3, `${scaledFontSizeXXS}px Inter`, '#38a169', 'left');
             });
             ctx.restore();
-            const totalContentHeight = mistakes.length * itemHeight; const visibleHeight = CANVAS_HEIGHT - startY - 20;
+            const totalContentHeight = mistakes.length * itemHeight; const visibleHeight = reviewAreaHeight;
             if (totalContentHeight > visibleHeight) {
-                const scrollBarHeight = Math.max(20, visibleHeight * (visibleHeight / totalContentHeight));
-                const scrollBarY = (startY - 10) + (reviewScrollOffset / (totalContentHeight - visibleHeight)) * (visibleHeight - scrollBarHeight);
-                const scrollBarX = CANVAS_WIDTH - 15;
-                 ctx.fillStyle = '#a0aec0'; ctx.fillRect(scrollBarX, scrollBarY, 8, scrollBarHeight);
+                const scrollBarHeight = Math.max(20 * scale, visibleHeight * (visibleHeight / totalContentHeight)); const scrollRatio = reviewScrollOffset / (totalContentHeight - visibleHeight);
+                 const clampedScrollRatio = Math.max(0, Math.min(1, scrollRatio)); const scrollBarY = reviewAreaTop + clampedScrollRatio * (visibleHeight - scrollBarHeight); const scrollBarX = canvas.width - (15 * scale);
+                 ctx.fillStyle = '#a0aec0'; ctx.fillRect(scrollBarX, scrollBarY, 8 * scale, scrollBarHeight);
             }
         }
 
         /** メインの描画関数 */
-        function draw() {
-            clearCanvas();
-            updateStatsDisplay();
-
+        function draw() { // (変更なし)
+            clearCanvas(); updateStatsDisplay();
             switch (gameState) {
-                case 'settings': drawSettingsScreen(); break;
-                case 'training': drawTrainingScreen(); break;
-                case 'feedback': drawFeedbackScreen(); break;
-                case 'finished': drawFinishedScreen(); break; // 内部でアニメーション管理する場合あり
+                case 'settings': drawSettingsScreen(); break; case 'training': drawTrainingScreen(); break;
+                case 'feedback': drawFeedbackScreen(); break; case 'finished': drawFinishedScreen(); break;
                 case 'review': drawReviewScreen(); break;
             }
-
-            // アニメーションループの継続判定
-            // トレーニング中(カーソル点滅) または お祝い中(紙吹雪)
-             if (gameState === 'training' || document.activeElement === hiddenInput || isCelebrating) {
-                 requestAnimationFrame(draw);
-             }
+             if (gameState === 'training' || document.activeElement === hiddenInput || isCelebrating) { requestAnimationFrame(draw); }
         }
 
         // --- ゲームロジック関連関数 ---
 
         /** 統計情報表示を更新 */
         function updateStatsDisplay() { // (変更なし)
-             const attemptedCount = attemptedQuestions.length;
-             const correctCount = attemptedQuestions.filter(q => q.isCorrect).length;
+             const attemptedCount = attemptedQuestions.length; const correctCount = attemptedQuestions.filter(q => q.isCorrect).length;
              const accuracy = attemptedCount > 0 ? ((correctCount / attemptedCount) * 100).toFixed(1) : '---';
              statsArea.textContent = `累計正答率: ${accuracy}% (${correctCount}/${attemptedCount}問)`;
         }
@@ -416,26 +353,20 @@
         /** オーディオコンテキストを開始 */
         async function startAudioContext() { // (変更なし)
             if (!isAudioContextStarted && Tone.context.state !== 'running') {
-                try {
-                    await Tone.start(); console.log('Audio context started successfully.'); isAudioContextStarted = true;
-                     if (!synth) { synth = new Tone.Synth().toDestination(); }
-                } catch (e) { console.error("Could not start audio context:", e); isAudioContextStarted = false; }
+                try { await Tone.start(); console.log('Audio context started successfully.'); isAudioContextStarted = true; if (!synth) { synth = new Tone.Synth().toDestination(); } }
+                catch (e) { console.error("Could not start audio context:", e); isAudioContextStarted = false; }
             }
              if (isAudioContextStarted && !synth) { synth = new Tone.Synth().toDestination(); }
         }
 
         /** トレーニングを開始 */
         async function startTraining() { // (変更なし)
-            await startAudioContext();
-            totalQuestions = parseInt(numQuestionsSelect.value, 10);
+            await startAudioContext(); totalQuestions = parseInt(numQuestionsSelect.value, 10);
             currentQuestionIndex = 0; score = 0; attemptedQuestions = []; mistakes = []; reviewScrollOffset = 0;
-            // お祝い関連フラグもリセット
-            isCelebrating = false;
-            celebrationPlayed = false;
-            confettiParticles = []; // 紙吹雪もクリア
-            generateQuestions(totalQuestions);
-            gameState = 'training'; currentAnswer = ''; hiddenInput.value = '';
-            switchControls('training'); hiddenInput.focus();
+            isCelebrating = false; celebrationPlayed = false; confettiParticles = [];
+            generateQuestions(totalQuestions); gameState = 'training'; currentAnswer = ''; hiddenInput.value = '';
+            switchControls('training'); hiddenInput.focus(); // Focus triggers scrollIntoView if needed
+            // resizeCanvas(); // Called during init and resize event
             draw(); requestAnimationFrame(draw);
         }
 
@@ -443,15 +374,17 @@
         function checkAnswer() {
             if (gameState !== 'training') return;
 
-            const userAnswerRaw = hiddenInput.value; currentAnswer = userAnswerRaw;
-            const parsedUserAnswer = parseAnswerInput(userAnswerRaw);
+            // ★ 入力を小文字に統一 ★
+            const userAnswerRaw = hiddenInput.value.toLowerCase();
+            currentAnswer = userAnswerRaw; // 表示用に保持 (小文字化後)
+            const parsedUserAnswer = parseAnswerInput(userAnswerRaw); // 小文字化されたものをパース
             const currentQ = questions[currentQuestionIndex]; const correctAnswer = currentQ.answer;
             let isCorrect = false; const correctAnswerStr = formatAnswer(correctAnswer);
 
             if (parsedUserAnswer === null) {
                 feedback = { message: '不正な入力形式です', color: 'orange' }; isCorrect = false;
             } else {
-                // 正誤判定 (変更なし)
+                // 正誤判定ロジック (変更なし)
                 if (typeof correctAnswer === 'object' && correctAnswer !== null && typeof correctAnswer.n === 'number') {
                     if (typeof parsedUserAnswer === 'object' && parsedUserAnswer !== null && typeof parsedUserAnswer.n === 'number') { isCorrect = parsedUserAnswer.n === correctAnswer.n && parsedUserAnswer.d === correctAnswer.d; }
                     else if (typeof parsedUserAnswer === 'number') { const correctValue = correctAnswer.n / correctAnswer.d; isCorrect = Math.abs(parsedUserAnswer - correctValue) < 0.00001; }
@@ -460,88 +393,93 @@
                      else if (typeof parsedUserAnswer === 'object' && parsedUserAnswer !== null) { const userValue = parsedUserAnswer.n / parsedUserAnswer.d; isCorrect = Math.abs(userValue - correctAnswer) < 0.00001; }
                 }
 
+                // 効果音とフィードバック (変更なし)
                 if (isCorrect) {
                     score++; feedback = { message: '正解！ 🎉', color: 'green' };
-                    // 正解効果音 (変更なし)
                     if (synth && isAudioContextStarted) { try { synth.triggerAttackRelease("C5", "8n", Tone.now()); } catch(e) { console.error("Error playing sound:", e); } }
                 } else {
                     feedback = { message: `残念！ 正解は ${correctAnswerStr} でした`, color: 'red' };
-                    // ★ 不正解の効果音を追加 ★
-                    if (synth && isAudioContextStarted) {
-                        try {
-                             synth.triggerAttackRelease("A3", "8n", Tone.now()); // 低い音 'A3'
-                        } catch(e) { console.error("Error playing sound:", e); }
-                    }
+                    if (synth && isAudioContextStarted) { try { synth.triggerAttackRelease("A3", "8n", Tone.now()); } catch(e) { console.error("Error playing sound:", e); } }
                 }
             }
-
             attemptedQuestions.push({ index: currentQuestionIndex, questionObj: currentQ, userAnswerRaw: userAnswerRaw, userAnswerParsed: parsedUserAnswer, correctAnswer: correctAnswer, isCorrect: isCorrect });
             if (!isCorrect) { mistakes.push(attemptedQuestions[attemptedQuestions.length - 1]); }
-
             gameState = 'feedback'; switchControls('feedback'); hiddenInput.blur();
             draw();
         }
 
         /** 次の問題へ */
         function nextQuestion() { // (変更なし)
-            if (gameState !== 'feedback') return;
-            currentQuestionIndex++;
+            if (gameState !== 'feedback') return; currentQuestionIndex++;
             if (currentQuestionIndex < totalQuestions) {
                 gameState = 'training'; currentAnswer = ''; hiddenInput.value = '';
                 switchControls('training'); hiddenInput.focus(); requestAnimationFrame(draw);
             } else {
-                gameState = 'finished'; switchControls('finished');
-                // 終了画面に遷移する際にアニメーションループを開始させる必要がある場合
-                draw(); // Draw once to trigger potential celebration start
-                if (isCelebrating) requestAnimationFrame(draw); // Start animation if celebrating
+                gameState = 'finished'; switchControls('finished'); draw();
             }
-            // draw() は finished 状態で呼ばれる drawFinishedScreen 内でアニメーション管理される
         }
 
          /** リスタート */
          function restartTraining() { // (変更なし)
-             // お祝い状態もリセット
-             isCelebrating = false;
-             celebrationPlayed = false;
-             confettiParticles = [];
-
+             isCelebrating = false; celebrationPlayed = false; confettiParticles = [];
              gameState = 'settings'; currentAnswer = ''; hiddenInput.value = '';
              feedback = { message: '', color: 'black' }; statsArea.textContent = '';
-             switchControls('settings'); draw();
+             switchControls('settings'); resizeCanvas();
          }
 
          /** レビュー表示 */
          function showReview() { // (変更なし)
-             if (gameState !== 'finished') return;
-             isCelebrating = false; // レビュー画面ではお祝いアニメーション停止
-             gameState = 'review'; reviewScrollOffset = 0;
-             switchControls('review'); draw();
+             if (gameState !== 'finished') return; isCelebrating = false;
+             gameState = 'review'; reviewScrollOffset = 0; switchControls('review'); draw();
          }
 
          /** 設定画面へ戻る */
          function backToStart() { // (変更なし)
-             if (gameState !== 'review') return;
-              restartTraining();
+             if (gameState !== 'review') return; restartTraining();
          }
 
-        // --- イベントリスナーの設定 ---
-        startButton.addEventListener('click', async () => { await startTraining(); }); // (変更なし)
-        submitButton.addEventListener('click', checkAnswer); // (変更なし)
-        nextButton.addEventListener('click', nextQuestion); // (変更なし)
-        restartButton.addEventListener('click', restartTraining); // (変更なし)
-        reviewButton.addEventListener('click', showReview); // (変更なし)
-        backToStartButton.addEventListener('click', backToStart); // (変更なし)
+         /** Canvasサイズ調整関数 */
+         function resizeCanvas() { // (変更なし)
+             const maxWidth = 700; const availableWidth = window.innerWidth * 0.95;
+             const newWidth = Math.min(availableWidth, maxWidth);
+             const newHeight = newWidth * (BASE_CANVAS_HEIGHT / BASE_CANVAS_WIDTH);
+             canvas.width = newWidth; canvas.height = newHeight;
+             scale = canvas.width / BASE_CANVAS_WIDTH;
+             draw();
+             if (isCelebrating) { requestAnimationFrame(draw); }
+         }
 
-        hiddenInput.addEventListener('input', (e) => { if (gameState === 'training') { currentAnswer = e.target.value; } }); // (変更なし)
-        hiddenInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); if (gameState === 'training') { checkAnswer(); } else if (gameState === 'feedback') { nextQuestion(); } } }); // (変更なし)
-        canvas.addEventListener('click', async (e) => { await startAudioContext(); if (gameState === 'training') { const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height; const canvasX = (e.clientX - rect.left) * scaleX; const canvasY = (e.clientY - rect.top) * scaleY; const inputBoxWidth = CANVAS_WIDTH * 0.7; const inputBoxX = (CANVAS_WIDTH - inputBoxWidth) / 2; if (canvasX >= inputBoxX && canvasX <= inputBoxX + inputBoxWidth && canvasY >= INPUT_BOX_Y && canvasY <= INPUT_BOX_Y + INPUT_BOX_HEIGHT) { hiddenInput.focus(); requestAnimationFrame(draw); } } }); // (変更なし)
-        canvas.addEventListener('wheel', (e) => { if (gameState === 'review' && mistakes.length > 0) { e.preventDefault(); const itemHeight = 85; const totalContentHeight = mistakes.length * itemHeight; const visibleHeight = CANVAS_HEIGHT - 80 - 20; if (totalContentHeight > visibleHeight) { reviewScrollOffset += e.deltaY * 0.5; reviewScrollOffset = Math.max(0, reviewScrollOffset); reviewScrollOffset = Math.min(reviewScrollOffset, totalContentHeight - visibleHeight + 20); draw(); } } }, { passive: false }); // (変更なし)
+
+        // --- イベントリスナーの設定 ---
+        startButton.addEventListener('click', async () => { await startTraining(); });
+        submitButton.addEventListener('click', checkAnswer);
+        nextButton.addEventListener('click', nextQuestion);
+        restartButton.addEventListener('click', restartTraining);
+        reviewButton.addEventListener('click', showReview);
+        backToStartButton.addEventListener('click', backToStart);
+
+        hiddenInput.addEventListener('input', (e) => { if (gameState === 'training') { currentAnswer = e.target.value; } });
+        hiddenInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); if (gameState === 'training') { checkAnswer(); } else if (gameState === 'feedback') { nextQuestion(); } } });
+
+        // ★ 入力フィールドフォーカス時にCanvasを中央にスクロール ★
+        hiddenInput.addEventListener('focus', () => {
+             // 少し遅延させてからスクロール実行（キーボード表示のタイミングに合わせるため）
+             setTimeout(() => {
+                 canvas.scrollIntoView({ behavior: 'smooth', block: 'center' });
+             }, 300); // 300msの遅延（端末によって調整が必要な場合あり）
+        });
+
+        canvas.addEventListener('click', async (e) => { await startAudioContext(); if (gameState === 'training') { const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height; const canvasX = (e.clientX - rect.left) * scaleX; const canvasY = (e.clientY - rect.top) * scaleY; const inputBoxWidth = canvas.width * 0.7; const inputBoxX = (canvas.width - inputBoxWidth) / 2; const scaledInputBoxY = BASE_INPUT_BOX_Y * scale; const scaledInputBoxHeight = BASE_INPUT_BOX_HEIGHT * scale; if (canvasX >= inputBoxX && canvasX <= inputBoxX + inputBoxWidth && canvasY >= scaledInputBoxY && canvasY <= scaledInputBoxY + scaledInputBoxHeight) { hiddenInput.focus(); requestAnimationFrame(draw); } } });
+        canvas.addEventListener('wheel', (e) => { if (gameState === 'review' && mistakes.length > 0) { e.preventDefault(); const itemHeight = 85 * scale; const totalContentHeight = mistakes.length * itemHeight; const visibleHeight = canvas.height - (80 * scale) - (20 * scale); if (totalContentHeight > visibleHeight) { reviewScrollOffset += e.deltaY * 0.5; reviewScrollOffset = Math.max(0, reviewScrollOffset); reviewScrollOffset = Math.min(reviewScrollOffset, totalContentHeight - visibleHeight + (20 * scale)); draw(); } } }, { passive: false });
+
+        window.addEventListener('resize', resizeCanvas);
 
 
         // --- アプリケーション初期化 ---
         function init() { // (変更なし)
-            gameState = 'settings'; switchControls('settings'); draw();
+            gameState = 'settings'; switchControls('settings');
             if (!synth) { try { synth = new Tone.Synth().toDestination(); } catch(e) { console.error("Failed to initialize synth on load:", e); } }
+            resizeCanvas();
         }
 
         // アプリケーション開始
