@@ -3,35 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>さんすうトレーニング (1年生)</title> <script src="https://cdn.tailwindcss.com"></script>
+    <title>さんすうトレーニング (1年生・せんたくしき)</title> <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     keyframes: {
-                        shake: {
-                            '10%, 90%': { transform: 'translateX(-2px)' },
-                            '20%, 80%': { transform: 'translateX(2px)' },
-                            '30%, 50%, 70%': { transform: 'translateX(-4px)' },
-                            '40%, 60%': { transform: 'translateX(4px)' }
-                        },
-                        pop: {
-                            '0%, 100%': { transform: 'scale(1)' },
-                            '50%': { transform: 'scale(1.1)' }
-                        }
+                        shake: { '10%, 90%': { transform: 'translateX(-2px)' }, '20%, 80%': { transform: 'translateX(2px)' }, '30%, 50%, 70%': { transform: 'translateX(-4px)' }, '40%, 60%': { transform: 'translateX(4px)' } },
+                        pop: { '0%, 100%': { transform: 'scale(1)' }, '50%': { transform: 'scale(1.1)' } }
                     },
-                    animation: {
-                        shake: 'shake 0.4s ease-in-out',
-                        pop: 'pop 0.3s ease-out'
-                    }
+                    animation: { shake: 'shake 0.4s ease-in-out', pop: 'pop 0.3s ease-out' }
                 }
             }
         }
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=M+PLUS+Rounded+1c:wght@500;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=M+PLUS+Rounded+1c:wght@500;700;900&display=swap" rel="stylesheet"> <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <style>
         html, body { height: 100%; overflow-x: hidden; }
         body {
@@ -45,7 +33,22 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 12px;
             cursor: default; max-width: 100%; flex-shrink: 0;
         }
-        #hidden-input { position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none; }
+        /* ★ 選択肢ボタンのスタイル ★ */
+        .choice-button {
+            min-width: 80px; /* 少し小さく */
+            padding: 0.8rem 1rem; /* パディング調整 */
+            font-size: 1.3rem; /* フォントを大きく */
+            font-weight: 700; /* 太字 */
+            border-radius: 0.75rem; /* 角丸を大きく */
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background-color: #60a5fa; /* bg-blue-400 */
+            color: white;
+        }
+        .choice-button:hover { background-color: #3b82f6; /* bg-blue-600 */ transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .choice-button:active { transform: translateY(0px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .choice-button:disabled { background-color: #9ca3af; /* bg-gray-400 */ cursor: not-allowed; opacity: 0.7; transform: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+
         .control-button { min-width: 110px; padding: 0.5rem 0.8rem; font-size: 0.9rem; }
         #controls { width: 100%; max-width: 600px; padding: 0 1rem; box-sizing: border-box; margin-top: 0.75rem; flex-shrink: 0; }
         #num-questions { padding: 0.4rem 0.6rem; font-size: 0.9rem; }
@@ -57,6 +60,7 @@
             .control-button { min-width: 120px; padding: 0.5rem 1rem; font-size: 1rem; }
             #num-questions { padding: 0.25rem 0.75rem; font-size: 1rem; }
             #controls { margin-top: 1rem; }
+            .choice-button { min-width: 100px; font-size: 1.5rem; }
         }
         .feedback-pop { animation: pop 0.3s ease-out; display: inline-block; }
     </style>
@@ -64,48 +68,60 @@
 <body class="bg-gradient-to-br from-teal-100 to-cyan-200">
 
     <div class="w-full max-w-2xl text-center flex-shrink-0">
-        <h1 class="font-bold text-gray-800">さんすうトレーニング (1年生)</h1> <div id="stats-area" class="text-base sm:text-lg font-semibold text-gray-700 h-6"></div>
+        <h1 class="font-bold text-gray-800">さんすうトレーニング (1年生・せんたくしき)</h1>
+         <div id="stats-area" class="text-base sm:text-lg font-semibold text-gray-700 h-6"></div>
     </div>
 
     <canvas id="mathCanvas"></canvas>
-    <input type="number" id="hidden-input" autocomplete="off" enterkeyhint="done" inputmode="numeric" pattern="[0-9]*"> <div id="controls" class="flex flex-wrap justify-center gap-2 sm:gap-3">
+    <div id="choice-box" class="hidden flex flex-wrap justify-center gap-3 sm:gap-4 mt-4">
+        </div>
+
+    <div id="controls" class="flex flex-wrap justify-center gap-2 sm:gap-3">
         <div id="settings-controls" class="flex flex-wrap justify-center items-center gap-2 sm:gap-3">
-            <label for="num-questions" class="text-gray-700 font-medium text-sm sm:text-base">もんだいのかず:</label> <select id="num-questions" class="rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-400">
-                <option value="5">5もん</option> <option value="10" selected>10もん</option> <option value="15">15もん</option> <option value="20">20もん</option> </select>
+            <label for="num-questions" class="text-gray-700 font-medium text-sm sm:text-base">もんだいのかず:</label>
+            <select id="num-questions" class="rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-400">
+                <option value="5">5もん</option> <option value="10" selected>10もん</option> <option value="15">15もん</option> <option value="20">20もん</option>
+            </select>
             <button id="start-button" class="control-button bg-teal-500 hover:bg-teal-600 text-white font-bold rounded-lg transition shadow">スタート</button>
         </div>
         <div id="training-controls" class="hidden flex flex-wrap justify-center gap-2 sm:gap-3">
-             <button id="submit-button" class="control-button bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition shadow">こたえあわせ</button> <button id="next-button" class="control-button bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition shadow hidden">つぎのもんだい</button> </div>
+             <button id="next-button" class="control-button bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition shadow hidden">つぎのもんだい</button>
+        </div>
         <div id="end-controls" class="hidden flex flex-wrap justify-center gap-2 sm:gap-3">
-            <button id="restart-button" class="control-button bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-lg transition shadow">もういっかい</button> <button id="review-button" class="control-button bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg transition shadow">まちがいかくにん</button> </div>
+            <button id="restart-button" class="control-button bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-lg transition shadow">もういっかい</button>
+            <button id="review-button" class="control-button bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg transition shadow">まちがいかくにん</button>
+         </div>
          <div id="review-controls" class="hidden flex flex-wrap justify-center gap-2 sm:gap-3">
-             <button id="back-to-start-button" class="control-button bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg transition shadow">さいしょにもどる</button> </div>
+             <button id="back-to-start-button" class="control-button bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg transition shadow">さいしょにもどる</button>
+         </div>
     </div>
 
     <script>
         // --- グローバル変数・定数 ---
         const canvas = document.getElementById('mathCanvas');
         const ctx = canvas.getContext('2d');
-        const hiddenInput = document.getElementById('hidden-input');
+        // const hiddenInput = document.getElementById('hidden-input'); // ★削除
         const statsArea = document.getElementById('stats-area');
+        const choiceBox = document.getElementById('choice-box'); // ★選択肢コンテナ取得
 
-        // コントロール要素 (変更なし)
+        // コントロール要素
         const settingsControls = document.getElementById('settings-controls');
         const trainingControls = document.getElementById('training-controls');
         const endControls = document.getElementById('end-controls');
         const reviewControls = document.getElementById('review-controls');
         const numQuestionsSelect = document.getElementById('num-questions');
         const startButton = document.getElementById('start-button');
-        const submitButton = document.getElementById('submit-button');
+        // const submitButton = document.getElementById('submit-button'); // ★削除
         const nextButton = document.getElementById('next-button');
         const restartButton = document.getElementById('restart-button');
         const reviewButton = document.getElementById('review-button');
         const backToStartButton = document.getElementById('back-to-start-button');
 
-        // ゲームの状態変数 (変更なし)
+        // ゲームの状態変数
         let gameState = 'settings';
         let currentQuestionIndex = 0; let score = 0; let totalQuestions = 10;
-        let questions = []; let attemptedQuestions = []; let currentAnswer = '';
+        let questions = []; let attemptedQuestions = [];
+        // let currentAnswer = ''; // ★不要
         let feedback = { message: '', color: 'black', effect: null };
         let mistakes = []; let reviewScrollOffset = 0; let currentStreak = 0;
 
@@ -124,100 +140,105 @@
 
         // Canvas描画関連の基準定数 (変更なし)
         const BASE_PROGRESS_Y = 55; const BASE_QUESTION_Y = 130; const BASE_INPUT_BOX_Y = 190;
-        const BASE_INPUT_BOX_HEIGHT = 40; const BASE_FEEDBACK_Y = 290;
+        const BASE_INPUT_BOX_HEIGHT = 40; const BASE_FEEDBACK_Y = 290; // フィードバック位置少し上げる
         const BASE_FONT_SIZE_XL = 32; const BASE_FONT_SIZE_L = 28; const BASE_FONT_SIZE_M = 24;
         const BASE_FONT_SIZE_S = 20; const BASE_FONT_SIZE_XS = 18; const BASE_FONT_SIZE_XXS = 16;
         const BASE_FONT_SIZE_TINY = 14;
 
 
         // --- 計算関連のヘルパー関数 ---
-        /**
-         * 最小値(min)から最大値(max)までのランダムな整数を生成
-         */
-        function getRandomInt(min, max) {
-            min = Math.ceil(min); max = Math.floor(max);
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-        }
+        function getRandomInt(min, max) { min = Math.ceil(min); max = Math.floor(max); return Math.floor(Math.random() * (max - min + 1)) + min; } // (変更なし)
+
+        // ★ parseAnswerInput は不要になったので削除 ★
+
+        /** 解答(数値)を文字列に変換 */
+        function formatAnswer(answer) { if (typeof answer === 'number') { return answer.toString(); } return ''; } // (変更なし)
+
+        // --- 問題生成関数 (小学1年生レベルに変更済み) ---
+        function generateGrade1Addition() { const n1 = getRandomInt(0, 10); const n2 = getRandomInt(0, 10); const answer = n1 + n2; const question = `${n1} + ${n2} = ?`; return { question, answer, type: 'integer' }; } // (変更なし)
+        function generateGrade1Subtraction() { const n1 = getRandomInt(1, 20); const n2 = getRandomInt(0, n1); const answer = n1 - n2; const question = `${n1} - ${n2} = ?`; return { question, answer, type: 'integer' }; } // (変更なし)
+        function generateQuestions(numQs) { questions = []; const questionTypes = [ generateGrade1Addition, generateGrade1Subtraction ]; for (let i = 0; i < numQs; i++) { const randomTypeIndex = Math.floor(Math.random() * questionTypes.length); try { questions.push(questionTypes[randomTypeIndex]()); } catch (error) { console.error("Error generating question:", error); i--; } } } // (変更なし)
+
+        // --- 選択肢関連 ---
 
         /**
-         * ★ ユーザー入力の整数をパースする関数 (簡略化) ★
-         * @param {string} inputStr - ユーザー入力文字列
-         * @returns {number|null} パースされた整数、または不正な形式の場合はnull
+         * ★ 配列をシャッフルする関数 (Fisher-Yates) ★
+         * @param {Array} array - シャッフルしたい配列
+         * @returns {Array} シャッフルされた配列 (元の配列は変更しない)
          */
-        function parseAnswerInput(inputStr) {
-            inputStr = inputStr.trim();
-            // 整数（先頭に+/-があってもよい）にマッチするかチェック
-            const numberMatch = inputStr.match(/^[+-]?\d+$/);
-            if (numberMatch) {
-                const num = parseInt(inputStr, 10);
-                // isNaNで数値変換が成功したか確認
-                return isNaN(num) ? null : num;
+        function shuffleArray(array) {
+            const shuffled = [...array]; // 配列をコピー
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; // 要素を交換
             }
-            return null; // 整数でなければnull
+            return shuffled;
         }
 
         /**
-         * 解答オブジェクト（数値）を整形された文字列に変換 (整数のみ対応)
-         * @param {number} answer - 解答
-         * @returns {string} 表示用の文字列
+         * ★ 選択肢ボタンを表示する関数 ★
+         * @param {number} correctAnswer - 正しい答え
          */
-        function formatAnswer(answer) {
-            if (typeof answer === 'number') {
-                return answer.toString();
-            }
-            return ''; // 不明な形式
-        }
+        function displayChoices(correctAnswer) {
+            choiceBox.innerHTML = ''; // 既存の選択肢をクリア
+            choiceBox.classList.remove('hidden'); // 表示する
 
-        // --- 問題生成関数 (小学1年生レベルに変更) ---
+            // ダミーの選択肢を生成
+            let choices = [correctAnswer];
+            let attempts = 0; // 無限ループ防止
+            while (choices.length < 3 && attempts < 10) {
+                let dummyAnswer;
+                // 正解に近いが異なる値を生成
+                const plusMinus = Math.random() < 0.5 ? -1 : 1;
+                const diff = getRandomInt(1, 3); // 1〜3違い
+                dummyAnswer = correctAnswer + (plusMinus * diff);
 
-        /**
-         * ★ 小学1年生レベルの足し算問題を生成 ★
-         * 例: 3 + 5 = ?, 8 + 7 = ? (繰り上がり含む場合あり)
-         */
-        function generateGrade1Addition() {
-            const n1 = getRandomInt(0, 10);
-            const n2 = getRandomInt(0, 10);
-            // 簡単にするため、答えが20を超えないように調整（任意）
-            // if (n1 + n2 > 20) return generateGrade1Addition();
-            const answer = n1 + n2;
-            const question = `${n1} + ${n2} = ?`;
-            return { question, answer, type: 'integer' }; // typeを追加
-        }
-
-        /**
-         * ★ 小学1年生レベルの引き算問題を生成 ★
-         * 例: 8 - 3 = ?, 15 - 7 = ? (繰り下がり含む場合あり)
-         * 答えは必ず0以上になるようにする
-         */
-        function generateGrade1Subtraction() {
-            const n1 = getRandomInt(1, 20); // 引かれる数は少し大きめまで
-            const n2 = getRandomInt(0, n1); // 引く数は引かれる数以下にする
-            const answer = n1 - n2;
-            const question = `${n1} - ${n2} = ?`;
-            return { question, answer, type: 'integer' }; // typeを追加
-        }
-
-        /**
-         * ★ 問題リストを指定された数だけ生成する (小学1年生レベルのみ) ★
-         * @param {number} numQs - 生成する問題数
-         */
-        function generateQuestions(numQs) {
-            questions = [];
-            // ★ 小学1年生レベルの問題タイプのみを使用 ★
-            const questionTypes = [
-                generateGrade1Addition,
-                generateGrade1Subtraction
-            ];
-            for (let i = 0; i < numQs; i++) {
-                const randomTypeIndex = Math.floor(Math.random() * questionTypes.length);
-                try {
-                    questions.push(questionTypes[randomTypeIndex]());
-                } catch (error) {
-                    console.error("Error generating question:", error);
-                    i--; // エラー時は再試行
+                // 0未満にならず、かつ他の選択肢と重複しないようにする
+                if (dummyAnswer >= 0 && !choices.includes(dummyAnswer)) {
+                    choices.push(dummyAnswer);
                 }
+                attempts++;
             }
+             // もし上記で3つ生成できなかった場合（例: 正解が0や1の場合）、単純な+1,+2を追加
+             while (choices.length < 3) {
+                 let dummyAnswer = choices[choices.length - 1] + 1; // 最後の要素+1
+                 if (!choices.includes(dummyAnswer)) {
+                     choices.push(dummyAnswer);
+                 } else { // それでも重複したら+2
+                     dummyAnswer++;
+                     if (!choices.includes(dummyAnswer)) choices.push(dummyAnswer);
+                     else break; // どうしても無理なら諦める
+                 }
+             }
+
+
+            const shuffledChoices = shuffleArray(choices);
+
+            shuffledChoices.forEach(choice => {
+                const button = document.createElement('button');
+                button.textContent = choice;
+                button.classList.add('choice-button'); // 新しいスタイルクラス
+                button.dataset.value = choice; // ボタンに値を保持
+                button.addEventListener('click', handleChoiceClick);
+                choiceBox.appendChild(button);
+            });
         }
+
+        /**
+         * ★ 選択肢ボタンがクリックされたときのハンドラ ★
+         * @param {Event} event - クリックイベント
+         */
+        function handleChoiceClick(event) {
+            if (gameState !== 'training') return; // トレーニング中のみ有効
+
+            const selectedValue = parseInt(event.target.dataset.value, 10);
+            checkAnswer(selectedValue); // 選択された値で答え合わせ
+
+            // すべての選択肢ボタンを無効化
+            const buttons = choiceBox.querySelectorAll('button');
+            buttons.forEach(button => button.disabled = true);
+        }
+
 
         // --- Canvas描画関連関数 ---
 
@@ -236,42 +257,35 @@
             ctx.fillStyle = '#4ade80'; ctx.fillRect(barX, scaledProgressY, barWidth * progress, barHeight);
              if (totalQuestions > 0 && gameState !== 'settings' && gameState !== 'finished' && gameState !== 'review') {
                   const scaledFontSize = Math.round(BASE_FONT_SIZE_TINY * scale);
-                  drawText(`${currentQuestionIndex + 1} / ${totalQuestions} もんめ`, scaledProgressY + (25 * scale), `${scaledFontSize}px Inter`, 'grey', 'center', 'middle'); // Text Updated
+                  drawText(`${currentQuestionIndex + 1} / ${totalQuestions} もんめ`, canvas.width / 2, scaledProgressY + (25 * scale), `${scaledFontSize}px Inter`, 'grey', 'center', 'middle');
              }
         }
 
         /** 設定画面を描画 (スケール対応) */
         function drawSettingsScreen() { // (変更なし)
             const scaledFontSizeXL = Math.round(BASE_FONT_SIZE_XL * scale); const scaledFontSizeXS = Math.round(BASE_FONT_SIZE_XS * scale);
-            drawText('せってい', canvas.width / 2, 150 * scale, `${scaledFontSizeXL}px "M PLUS Rounded 1c"`, 'black'); // Text Updated
-            drawText('もんだいのかずを えらんで スタートしてね', canvas.width / 2, 200 * scale, `${scaledFontSizeXS}px Inter`, 'grey'); // Text Updated
+            drawText('せってい', canvas.width / 2, 150 * scale, `${scaledFontSizeXL}px "M PLUS Rounded 1c"`, 'black');
+            drawText('もんだいのかずを えらんで スタートしてね', canvas.width / 2, 200 * scale, `${scaledFontSizeXS}px Inter`, 'grey');
         }
 
-        /** トレーニング画面を描画 (スケール対応) */
+        /** トレーニング画面を描画 (スケール対応) - ★入力欄削除★ */
         function drawTrainingScreen() {
             drawProgressBar(); const currentQ = questions[currentQuestionIndex]; if (!currentQ) return;
             const scaledQuestionY = BASE_QUESTION_Y * scale; const scaledFontSizeL = Math.round(BASE_FONT_SIZE_L * scale);
-            drawText(currentQ.question, canvas.width / 2, scaledQuestionY, `bold ${scaledFontSizeL}px "M PLUS Rounded 1c"`, '#333');
-            const inputBoxWidth = canvas.width * 0.7; const inputBoxX = (canvas.width - inputBoxWidth) / 2;
-            const scaledInputBoxY = BASE_INPUT_BOX_Y * scale; const scaledInputBoxHeight = BASE_INPUT_BOX_HEIGHT * scale;
-            const scaledFontSizeXS = Math.round(BASE_FONT_SIZE_XS * scale); const scaledFontSizeS = Math.round(BASE_FONT_SIZE_S * scale); const scaledFontSizeTiny = Math.round(BASE_FONT_SIZE_TINY * scale);
-            ctx.strokeStyle = '#a0aec0'; ctx.lineWidth = 1 * scale; ctx.strokeRect(inputBoxX, scaledInputBoxY, inputBoxWidth, scaledInputBoxHeight);
-            drawText('こたえ:', inputBoxX - (10 * scale), scaledInputBoxY + scaledInputBoxHeight / 2, `${scaledFontSizeXS}px Inter`, 'black', 'right', 'middle'); // Text Updated
-            drawText(currentAnswer, inputBoxX + (10 * scale), scaledInputBoxY + scaledInputBoxHeight / 2, `${scaledFontSizeS}px Inter`, 'black', 'left', 'middle');
-            if (document.activeElement === hiddenInput && Math.floor(Date.now() / 500) % 2 === 0) {
-                ctx.save(); ctx.font = `${scaledFontSizeS}px Inter`; const textWidth = ctx.measureText(currentAnswer).width; const cursorX = inputBoxX + (10 * scale) + textWidth + (2 * scale);
-                ctx.fillStyle = 'black'; ctx.fillRect(cursorX, scaledInputBoxY + (5 * scale), 2 * scale, scaledInputBoxHeight - (10 * scale)); ctx.restore();
-            }
-             // ★ 入力ヒント変更 ★
-             drawText('すうじで こたえを いれてね', canvas.width / 2, scaledInputBoxY + scaledInputBoxHeight + (25 * scale), `${scaledFontSizeTiny}px Inter`, 'grey'); // Text Updated
+            // 問題文を少し上に表示
+            drawText(currentQ.question, canvas.width / 2, scaledQuestionY - (20 * scale), `bold ${scaledFontSizeL * 1.1}px "M PLUS Rounded 1c"`, '#333'); // 少し大きく
 
-            drawCharacter(); // キャラクター描画 (変更なし)
+            // ★ 入力ボックス、ヒント、カーソルの描画を削除 ★
+
+            drawCharacter(); // キャラクター描画
         }
 
         /** フィードバック画面を描画 (スケール対応) */
-        function drawFeedbackScreen() { // (変更なし)
-            drawTrainingScreen(); const scaledFeedbackY = BASE_FEEDBACK_Y * scale; const scaledFontSizeS = Math.round(BASE_FONT_SIZE_S * scale);
-            let message = feedback.message; if (currentStreak >= 3) { message += ` (${currentStreak}れんぞく せいかい!)`; } // Text Updated
+        function drawFeedbackScreen() {
+            drawTrainingScreen(); // 問題とキャラクターは表示したまま
+            const scaledFeedbackY = BASE_FEEDBACK_Y * scale; // 位置調整
+            const scaledFontSizeS = Math.round(BASE_FONT_SIZE_S * scale);
+            let message = feedback.message; if (currentStreak >= 3) { message += ` (${currentStreak}れんぞく せいかい!)`; }
             drawText(message, canvas.width / 2, scaledFeedbackY, `bold ${scaledFontSizeS}px Inter`, feedback.color);
         }
 
@@ -299,19 +313,18 @@
 
          /** 終了画面を描画 (スケール対応) */
         function drawFinishedScreen() { // (変更なし)
-            const finalScoreText = `おわり！ ${totalQuestions}もん ちゅう ${score}もん せいかい！`; // Text Updated
-            const accuracy = totalQuestions > 0 ? ((score / totalQuestions) * 100) : 0; const accuracyText = `せいかいりつ: ${accuracy.toFixed(1)}%`; // Text Updated
+            const finalScoreText = `おわり！ ${totalQuestions}もん ちゅう ${score}もん せいかい！`; const accuracy = totalQuestions > 0 ? ((score / totalQuestions) * 100) : 0; const accuracyText = `せいかいりつ: ${accuracy.toFixed(1)}%`;
             if (accuracy >= 80 && !celebrationPlayed) {
                 isCelebrating = true; celebrationPlayed = true; createConfetti();
                 if (synth && isAudioContextStarted) { try { synth.triggerAttackRelease("C5", "8n", Tone.now()); synth.triggerAttackRelease("E5", "8n", Tone.now() + 0.15); synth.triggerAttackRelease("G5", "8n", Tone.now() + 0.3); synth.triggerAttackRelease("C6", "4n", Tone.now() + 0.45); } catch(e) { console.error("Error playing celebration sound:", e); } }
             }
             if (isCelebrating) { updateConfetti(); drawConfetti(); }
             const scaledFontSizeXL = Math.round(BASE_FONT_SIZE_XL * scale); const scaledFontSizeM = Math.round(BASE_FONT_SIZE_M * scale); const scaledFontSizeXXS = Math.round(BASE_FONT_SIZE_XXS * scale); const scaledFontSizeXS = Math.round(BASE_FONT_SIZE_XS * scale);
-            drawText('おつかれさま！', canvas.width / 2, 120 * scale, `${scaledFontSizeXL}px "M PLUS Rounded 1c"`, 'black'); // Text Updated
+            drawText('おつかれさま！', canvas.width / 2, 120 * scale, `${scaledFontSizeXL}px "M PLUS Rounded 1c"`, 'black');
             drawText(finalScoreText, canvas.width / 2, 180 * scale, `${scaledFontSizeM}px Inter`, '#4a5568');
             drawText(accuracyText, canvas.width / 2, 220 * scale, `${scaledFontSizeM}px Inter`, '#4a5568');
-            if (mistakes.length > 0) { drawText(`(${mistakes.length}もん まちがえたね)`, canvas.width / 2, 260 * scale, `${scaledFontSizeXXS}px Inter`, 'grey'); } // Text Updated
-            else { drawText('ぜんぶ せいかい！すごい！ 🎉', canvas.width / 2, 260 * scale, `${scaledFontSizeXS}px Inter`, 'green'); // Text Updated
+            if (mistakes.length > 0) { drawText(`(${mistakes.length}もん まちがえたね)`, canvas.width / 2, 260 * scale, `${scaledFontSizeXXS}px Inter`, 'grey'); }
+            else { drawText('ぜんぶ せいかい！すごい！ 🎉', canvas.width / 2, 260 * scale, `${scaledFontSizeXS}px Inter`, 'green');
                  if (!celebrationPlayed) { isCelebrating = true; celebrationPlayed = true; createConfetti(); if (synth && isAudioContextStarted) { try { synth.triggerAttackRelease("C5", "8n", Tone.now()); synth.triggerAttackRelease("E5", "8n", Tone.now() + 0.15); synth.triggerAttackRelease("G5", "8n", Tone.now() + 0.3); synth.triggerAttackRelease("C6", "4n", Tone.now() + 0.45); } catch(e) { console.error("Error playing sound:", e); } } }
             }
             if (isCelebrating) { requestAnimationFrame(draw); }
@@ -320,8 +333,8 @@
         /** レビュー画面を描画 (スケール対応) */
         function drawReviewScreen() { // (変更なし)
             const scaledFontSizeM = Math.round(BASE_FONT_SIZE_M * scale); const scaledFontSizeXS = Math.round(BASE_FONT_SIZE_XS * scale); const scaledFontSizeXXS = Math.round(BASE_FONT_SIZE_XXS * scale);
-            drawText('まちがいのかくにん', canvas.width / 2, 40 * scale, `${scaledFontSizeM}px "M PLUS Rounded 1c"`, 'black'); // Text Updated
-            if (mistakes.length === 0) { drawText('まちがえた もんだいは なかったよ', canvas.width / 2, 150 * scale, `${scaledFontSizeXS}px Inter`, 'green'); return; } // Text Updated
+            drawText('まちがいのかくにん', canvas.width / 2, 40 * scale, `${scaledFontSizeM}px "M PLUS Rounded 1c"`, 'black');
+            if (mistakes.length === 0) { drawText('まちがえた もんだいは なかったよ', canvas.width / 2, 150 * scale, `${scaledFontSizeXS}px Inter`, 'green'); return; }
             const itemHeight = 85 * scale; const startY = 80 * scale; const contentWidth = canvas.width * 0.9; const startX = (canvas.width - contentWidth) / 2; const reviewAreaTop = startY - (10 * scale); const reviewAreaHeight = canvas.height - startY - (20 * scale);
              ctx.save(); ctx.beginPath(); ctx.rect(0, reviewAreaTop, canvas.width, reviewAreaHeight); ctx.clip();
              const drawStartY = startY - reviewScrollOffset;
@@ -329,9 +342,10 @@
                 const yPos = drawStartY + index * itemHeight; if (yPos + itemHeight < reviewAreaTop || yPos > reviewAreaTop + reviewAreaHeight) { return; }
                 ctx.fillStyle = index % 2 === 0 ? '#f7fafc' : '#edf2f7'; ctx.fillRect(startX, yPos, contentWidth, itemHeight - (5 * scale));
                 const textY1 = yPos + (20 * scale); const textY2 = yPos + (45 * scale); const textY3 = yPos + (70 * scale);
-                drawText(`もんだい ${mistake.index + 1}: ${mistake.questionObj.question}`, startX + (10 * scale), textY1, `${scaledFontSizeXXS}px "M PLUS Rounded 1c"`, '#2d3748', 'left'); // Text Updated
-                drawText(`きみの こたえ: ${mistake.userAnswerRaw}`, startX + (15 * scale), textY2, `${scaledFontSizeXXS}px Inter`, '#e53e3e', 'left'); // Text Updated
-                drawText(`ただしい こたえ: ${formatAnswer(mistake.correctAnswer)}`, startX + (15 * scale), textY3, `${scaledFontSizeXXS}px Inter`, '#38a169', 'left'); // Text Updated
+                // ★ レビュー画面のテキストも整数のみに ★
+                drawText(`もんだい ${mistake.index + 1}: ${mistake.questionObj.question}`, startX + (10 * scale), textY1, `${scaledFontSizeXXS}px "M PLUS Rounded 1c"`, '#2d3748', 'left');
+                drawText(`きみの こたえ: ${mistake.userAnswerRaw}`, startX + (15 * scale), textY2, `${scaledFontSizeXXS}px Inter`, '#e53e3e', 'left'); // Raw input is still relevant
+                drawText(`ただしい こたえ: ${formatAnswer(mistake.correctAnswer)}`, startX + (15 * scale), textY3, `${scaledFontSizeXXS}px Inter`, '#38a169', 'left');
             });
             ctx.restore();
             const totalContentHeight = mistakes.length * itemHeight; const visibleHeight = reviewAreaHeight;
@@ -350,7 +364,8 @@
                 case 'feedback': drawFeedbackScreen(); break; case 'finished': drawFinishedScreen(); break;
                 case 'review': drawReviewScreen(); break;
             }
-             if (gameState === 'training' || document.activeElement === hiddenInput || isCelebrating) { requestAnimationFrame(draw); }
+             // ★ hiddenInput がないので条件変更 ★
+             if (gameState === 'training' || isCelebrating) { requestAnimationFrame(draw); }
         }
 
         // --- ゲームロジック関連関数 ---
@@ -359,16 +374,28 @@
         function updateStatsDisplay() { // (変更なし)
              const attemptedCount = attemptedQuestions.length; const correctCount = attemptedQuestions.filter(q => q.isCorrect).length;
              const accuracy = attemptedCount > 0 ? ((correctCount / attemptedCount) * 100).toFixed(1) : '---';
-             statsArea.textContent = `せいかいりつ: ${accuracy}% (${correctCount}/${attemptedCount}もん)`; // Text Updated
+             statsArea.textContent = `せいかいりつ: ${accuracy}% (${correctCount}/${attemptedCount}もん)`;
         }
 
         /** 操作ボタンの表示切替 */
-        function switchControls(state) { // (変更なし)
+        function switchControls(state) {
              settingsControls.classList.add('hidden'); trainingControls.classList.add('hidden'); endControls.classList.add('hidden'); reviewControls.classList.add('hidden');
+             choiceBox.classList.add('hidden'); // ★ 選択肢も隠す
+
              switch(state) {
                  case 'settings': settingsControls.classList.remove('hidden'); break;
-                 case 'training': trainingControls.classList.remove('hidden'); submitButton.classList.remove('hidden'); nextButton.classList.add('hidden'); break;
-                 case 'feedback': trainingControls.classList.remove('hidden'); submitButton.classList.add('hidden'); nextButton.classList.remove('hidden'); break;
+                 case 'training':
+                     trainingControls.classList.remove('hidden');
+                     // submitButton is removed
+                     nextButton.classList.add('hidden'); // Next button hidden initially
+                     choiceBox.classList.remove('hidden'); // ★ 選択肢表示
+                     break;
+                 case 'feedback':
+                     trainingControls.classList.remove('hidden');
+                     // submitButton is removed
+                     nextButton.classList.remove('hidden'); // Show next button after feedback
+                     choiceBox.classList.remove('hidden'); // Keep choices visible but disabled
+                     break;
                  case 'finished': endControls.classList.remove('hidden'); break;
                  case 'review': reviewControls.classList.remove('hidden'); break;
              }
@@ -384,63 +411,100 @@
         }
 
         /** トレーニングを開始 */
-        async function startTraining() { // (変更なし)
+        async function startTraining() {
             await startAudioContext(); totalQuestions = parseInt(numQuestionsSelect.value, 10);
             currentQuestionIndex = 0; score = 0; attemptedQuestions = []; mistakes = []; reviewScrollOffset = 0;
             isCelebrating = false; celebrationPlayed = false; confettiParticles = []; currentStreak = 0; characterState = 'idle';
-            generateQuestions(totalQuestions); gameState = 'training'; currentAnswer = ''; hiddenInput.value = '';
-            switchControls('training'); hiddenInput.focus();
-            draw(); requestAnimationFrame(draw);
+            generateQuestions(totalQuestions); gameState = 'training';
+            // currentAnswer = ''; hiddenInput.value = ''; // ★削除
+            switchControls('training');
+            // hiddenInput.focus(); // ★削除
+            loadQuestion(); // ★ loadQuestion を呼ぶように変更
+            // draw(); requestAnimationFrame(draw); // drawはloadQuestion内で呼ばれる
         }
 
-        /** 答えをチェック */
-        function checkAnswer() { // (変更なし - 小文字化済み)
-            if (gameState !== 'training') return;
-            const userAnswerRaw = hiddenInput.value.toLowerCase(); currentAnswer = userAnswerRaw;
-            const parsedUserAnswer = parseAnswerInput(userAnswerRaw); // ★ 簡略化された関数を使用
+        /**
+         * ★ 問題をロードして表示する関数 (選択肢表示も含む) ★
+         */
+        function loadQuestion() {
+             if (currentQuestionIndex < totalQuestions) {
+                 const currentQ = questions[currentQuestionIndex];
+                 feedback = { message: '', color: 'black', effect: null }; // Reset feedback
+                 characterState = 'idle'; // Reset character
+                 canvas.classList.remove('animate-shake'); // Reset shake
+
+                 displayChoices(currentQ.answer); // ★ 選択肢を表示
+
+                 draw(); // Canvasを再描画
+                 requestAnimationFrame(draw); // アニメーションループ開始/継続
+             } else {
+                 gameState = 'finished';
+                 switchControls('finished');
+                 draw();
+             }
+        }
+
+
+        /**
+         * ★ 答えをチェックする関数 (選択された値を受け取る) ★
+         * @param {number} selectedValue - ユーザーが選択した答え
+         */
+        function checkAnswer(selectedValue) {
+            // gameState check is done in handleChoiceClick
+
+            // ★ 入力値の読み取りは不要 ★
             const currentQ = questions[currentQuestionIndex]; const correctAnswer = currentQ.answer;
             let isCorrect = false; const correctAnswerStr = formatAnswer(correctAnswer);
             feedback.effect = null; canvas.classList.remove('animate-shake');
 
-            if (parsedUserAnswer === null) {
-                feedback = { message: 'すうじを いれてね', color: 'orange', effect: 'shake' }; // Text Updated
-                isCorrect = false; currentStreak = 0; characterState = 'sad';
-            } else {
-                // ★ 整数同士の比較のみ ★
-                isCorrect = (parsedUserAnswer === correctAnswer);
+            // ★ 整数同士の比較のみ ★
+            isCorrect = (selectedValue === correctAnswer);
 
-                if (isCorrect) {
-                    score++; currentStreak++; feedback = { message: 'せいかい！ 🎉', color: 'green', effect: 'pop' }; // Text Updated
-                    characterState = 'happy';
-                    if (synth && isAudioContextStarted) { try { synth.triggerAttackRelease("C5", "8n", Tone.now()); } catch(e) { console.error("Error playing sound:", e); } }
-                    if (currentStreak >= 3 && synth && isAudioContextStarted) { try { synth.triggerAttackRelease("E5", "16n", Tone.now() + 0.1); synth.triggerAttackRelease("G5", "16n", Tone.now() + 0.2); } catch(e) { console.error("Error playing streak sound:", e); } }
-                } else {
-                    currentStreak = 0; feedback = { message: `ざんねん！ こたえは ${correctAnswerStr} だよ`, color: 'red', effect: 'shake' }; // Text Updated
-                    characterState = 'sad';
-                    if (synth && isAudioContextStarted) { try { synth.triggerAttackRelease("A3", "8n", Tone.now()); } catch(e) { console.error("Error playing sound:", e); } }
-                }
+            if (isCorrect) {
+                score++; currentStreak++; feedback = { message: 'せいかい！ 🎉', color: 'green', effect: 'pop' };
+                characterState = 'happy';
+                if (synth && isAudioContextStarted) { try { synth.triggerAttackRelease("C5", "8n", Tone.now()); } catch(e) { console.error("Error playing sound:", e); } }
+                if (currentStreak >= 3 && synth && isAudioContextStarted) { try { synth.triggerAttackRelease("E5", "16n", Tone.now() + 0.1); synth.triggerAttackRelease("G5", "16n", Tone.now() + 0.2); } catch(e) { console.error("Error playing streak sound:", e); } }
+            } else {
+                currentStreak = 0; feedback = { message: `ざんねん！ こたえは ${correctAnswerStr} だよ`, color: 'red', effect: 'shake' };
+                characterState = 'sad';
+                if (synth && isAudioContextStarted) { try { synth.triggerAttackRelease("A3", "8n", Tone.now()); } catch(e) { console.error("Error playing sound:", e); } }
             }
-            attemptedQuestions.push({ index: currentQuestionIndex, questionObj: currentQ, userAnswerRaw: userAnswerRaw, userAnswerParsed: parsedUserAnswer, correctAnswer: correctAnswer, isCorrect: isCorrect });
+
+            // ★ userAnswerRaw は選択された値にする ★
+            attemptedQuestions.push({ index: currentQuestionIndex, questionObj: currentQ, userAnswerRaw: selectedValue.toString(), userAnswerParsed: selectedValue, correctAnswer: correctAnswer, isCorrect: isCorrect });
             if (!isCorrect) { mistakes.push(attemptedQuestions[attemptedQuestions.length - 1]); }
-            gameState = 'feedback'; switchControls('feedback'); hiddenInput.blur();
+
+            gameState = 'feedback';
+            switchControls('feedback'); // Nextボタン表示
+
              if (feedback.effect === 'shake') { canvas.classList.add('animate-shake'); setTimeout(() => canvas.classList.remove('animate-shake'), 400); }
-            draw();
+
+            draw(); // フィードバック表示
         }
 
         /** 次の問題へ */
-        function nextQuestion() { // (変更なし)
-            if (gameState !== 'feedback') return; currentQuestionIndex++; characterState = 'idle'; feedback.effect = null; canvas.classList.remove('animate-shake');
+        function nextQuestion() {
+            if (gameState !== 'feedback') return;
+            currentQuestionIndex++;
+            characterState = 'idle'; feedback.effect = null; canvas.classList.remove('animate-shake');
+            choiceBox.classList.add('hidden'); // ★ 選択肢を隠す
+
             if (currentQuestionIndex < totalQuestions) {
-                gameState = 'training'; currentAnswer = ''; hiddenInput.value = '';
-                switchControls('training'); hiddenInput.focus(); requestAnimationFrame(draw);
-            } else { gameState = 'finished'; switchControls('finished'); draw(); }
+                gameState = 'training';
+                switchControls('training');
+                loadQuestion(); // ★ 次の問題をロード
+            } else {
+                gameState = 'finished';
+                switchControls('finished');
+                draw(); // 終了画面表示
+            }
         }
 
          /** リスタート */
          function restartTraining() { // (変更なし)
              isCelebrating = false; celebrationPlayed = false; confettiParticles = []; currentStreak = 0; characterState = 'idle';
-             gameState = 'settings'; currentAnswer = ''; hiddenInput.value = '';
-             feedback = { message: '', color: 'black', effect: null }; statsArea.textContent = '';
+             gameState = 'settings'; feedback = { message: '', color: 'black', effect: null }; statsArea.textContent = '';
              switchControls('settings'); resizeCanvas();
          }
 
@@ -464,18 +528,23 @@
          }
 
 
-        // --- イベントリスナーの設定 --- (変更なし)
+        // --- イベントリスナーの設定 ---
         startButton.addEventListener('click', async () => { await startTraining(); });
-        submitButton.addEventListener('click', checkAnswer);
+        // submitButton listener removed
         nextButton.addEventListener('click', nextQuestion);
         restartButton.addEventListener('click', restartTraining);
         reviewButton.addEventListener('click', showReview);
         backToStartButton.addEventListener('click', backToStart);
-        hiddenInput.addEventListener('input', (e) => { if (gameState === 'training') { currentAnswer = e.target.value; } });
-        hiddenInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); if (gameState === 'training') { checkAnswer(); } else if (gameState === 'feedback') { nextQuestion(); } } });
-        hiddenInput.addEventListener('focus', () => { setTimeout(() => { canvas.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300); });
-        canvas.addEventListener('click', async (e) => { await startAudioContext(); if (gameState === 'training') { const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height; const canvasX = (e.clientX - rect.left) * scaleX; const canvasY = (e.clientY - rect.top) * scaleY; const inputBoxWidth = canvas.width * 0.7; const inputBoxX = (canvas.width - inputBoxWidth) / 2; const scaledInputBoxY = BASE_INPUT_BOX_Y * scale; const scaledInputBoxHeight = BASE_INPUT_BOX_HEIGHT * scale; if (canvasX >= inputBoxX && canvasX <= inputBoxX + inputBoxWidth && canvasY >= scaledInputBoxY && canvasY <= scaledInputBoxY + scaledInputBoxHeight) { hiddenInput.focus(); requestAnimationFrame(draw); } } });
+
+        // ★ hiddenInput listeners removed ★
+
+        // Canvas click listener (for starting audio context mainly)
+        canvas.addEventListener('click', async (e) => { await startAudioContext(); });
+
+        // Review screen scroll listener (変更なし)
         canvas.addEventListener('wheel', (e) => { if (gameState === 'review' && mistakes.length > 0) { e.preventDefault(); const itemHeight = 85 * scale; const totalContentHeight = mistakes.length * itemHeight; const visibleHeight = canvas.height - (80 * scale) - (20 * scale); if (totalContentHeight > visibleHeight) { reviewScrollOffset += e.deltaY * 0.5; reviewScrollOffset = Math.max(0, reviewScrollOffset); reviewScrollOffset = Math.min(reviewScrollOffset, totalContentHeight - visibleHeight + (20 * scale)); draw(); } } }, { passive: false });
+
+        // Window resize listener (変更なし)
         window.addEventListener('resize', resizeCanvas);
 
 
