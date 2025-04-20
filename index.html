@@ -3,26 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>算数トレーニング Canvas版</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>さんすうトレーニング (1年生)</title> <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     keyframes: {
                         shake: {
-                            '10%, 90%': { transform: 'translateX(-2px)' }, // 少し揺れを抑える
+                            '10%, 90%': { transform: 'translateX(-2px)' },
                             '20%, 80%': { transform: 'translateX(2px)' },
                             '30%, 50%, 70%': { transform: 'translateX(-4px)' },
                             '40%, 60%': { transform: 'translateX(4px)' }
                         },
-                        pop: { // 正解時用
+                        pop: {
                             '0%, 100%': { transform: 'scale(1)' },
                             '50%': { transform: 'scale(1.1)' }
                         }
                     },
                     animation: {
-                        shake: 'shake 0.4s ease-in-out', // ease-in-outに変更
+                        shake: 'shake 0.4s ease-in-out',
                         pop: 'pop 0.3s ease-out'
                     }
                 }
@@ -37,17 +36,14 @@
         html, body { height: 100%; overflow-x: hidden; }
         body {
             font-family: 'Inter', 'M PLUS Rounded 1c', sans-serif;
-            overscroll-behavior-y: contain;
-            display: flex; flex-direction: column; align-items: center;
-            justify-content: center; /* 垂直方向中央揃えを基本に */
-            padding: 1rem; box-sizing: border-box; /* paddingを考慮 */
-            background: linear-gradient(135deg, #e0f7fa 0%, #e1f5fe 100%); /* Slightly lighter gradient */
+            overscroll-behavior-y: contain; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; padding: 1rem;
+            box-sizing: border-box; background: linear-gradient(135deg, #e0f7fa 0%, #e1f5fe 100%);
         }
         canvas {
             display: block; margin: 0 auto; background-color: #fff;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 12px;
-            cursor: default; max-width: 100%;
-            flex-shrink: 0;
+            cursor: default; max-width: 100%; flex-shrink: 0;
         }
         #hidden-input { position: absolute; left: -9999px; top: -9999px; opacity: 0; pointer-events: none; }
         .control-button { min-width: 110px; padding: 0.5rem 0.8rem; font-size: 0.9rem; }
@@ -62,42 +58,28 @@
             #num-questions { padding: 0.25rem 0.75rem; font-size: 1rem; }
             #controls { margin-top: 1rem; }
         }
-        /* Feedback text animation class */
-        .feedback-pop {
-             animation: pop 0.3s ease-out;
-             display: inline-block; /* Prevent width changes affecting layout */
-        }
+        .feedback-pop { animation: pop 0.3s ease-out; display: inline-block; }
     </style>
 </head>
 <body class="bg-gradient-to-br from-teal-100 to-cyan-200">
 
     <div class="w-full max-w-2xl text-center flex-shrink-0">
-        <h1 class="font-bold text-gray-800">算数トレーニング Canvas版</h1>
-         <div id="stats-area" class="text-base sm:text-lg font-semibold text-gray-700 h-6"></div>
+        <h1 class="font-bold text-gray-800">さんすうトレーニング (1年生)</h1> <div id="stats-area" class="text-base sm:text-lg font-semibold text-gray-700 h-6"></div>
     </div>
 
     <canvas id="mathCanvas"></canvas>
-    <input type="text" id="hidden-input" autocomplete="off" enterkeyhint="done">
-
-    <div id="controls" class="flex flex-wrap justify-center gap-2 sm:gap-3">
+    <input type="number" id="hidden-input" autocomplete="off" enterkeyhint="done" inputmode="numeric" pattern="[0-9]*"> <div id="controls" class="flex flex-wrap justify-center gap-2 sm:gap-3">
         <div id="settings-controls" class="flex flex-wrap justify-center items-center gap-2 sm:gap-3">
-            <label for="num-questions" class="text-gray-700 font-medium text-sm sm:text-base">問題数:</label>
-            <select id="num-questions" class="rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-400">
-                <option value="5">5問</option> <option value="10" selected>10問</option> <option value="15">15問</option> <option value="20">20問</option>
-            </select>
+            <label for="num-questions" class="text-gray-700 font-medium text-sm sm:text-base">もんだいのかず:</label> <select id="num-questions" class="rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-400">
+                <option value="5">5もん</option> <option value="10" selected>10もん</option> <option value="15">15もん</option> <option value="20">20もん</option> </select>
             <button id="start-button" class="control-button bg-teal-500 hover:bg-teal-600 text-white font-bold rounded-lg transition shadow">スタート</button>
         </div>
         <div id="training-controls" class="hidden flex flex-wrap justify-center gap-2 sm:gap-3">
-             <button id="submit-button" class="control-button bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition shadow">こたえ合わせ</button>
-             <button id="next-button" class="control-button bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition shadow hidden">つぎ</button>
-        </div>
+             <button id="submit-button" class="control-button bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition shadow">こたえあわせ</button> <button id="next-button" class="control-button bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition shadow hidden">つぎのもんだい</button> </div>
         <div id="end-controls" class="hidden flex flex-wrap justify-center gap-2 sm:gap-3">
-            <button id="restart-button" class="control-button bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-lg transition shadow">もう一度</button>
-            <button id="review-button" class="control-button bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg transition shadow">間違い確認</button>
-         </div>
+            <button id="restart-button" class="control-button bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-lg transition shadow">もういっかい</button> <button id="review-button" class="control-button bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg transition shadow">まちがいかくにん</button> </div>
          <div id="review-controls" class="hidden flex flex-wrap justify-center gap-2 sm:gap-3">
-             <button id="back-to-start-button" class="control-button bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg transition shadow">最初の画面へ</button>
-         </div>
+             <button id="back-to-start-button" class="control-button bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg transition shadow">さいしょにもどる</button> </div>
     </div>
 
     <script>
@@ -120,13 +102,12 @@
         const reviewButton = document.getElementById('review-button');
         const backToStartButton = document.getElementById('back-to-start-button');
 
-        // ゲームの状態変数
+        // ゲームの状態変数 (変更なし)
         let gameState = 'settings';
         let currentQuestionIndex = 0; let score = 0; let totalQuestions = 10;
         let questions = []; let attemptedQuestions = []; let currentAnswer = '';
-        let feedback = { message: '', color: 'black', effect: null }; // effect: 'pop', 'shake'
-        let mistakes = []; let reviewScrollOffset = 0;
-        let currentStreak = 0; // ★ 連続正解数
+        let feedback = { message: '', color: 'black', effect: null };
+        let mistakes = []; let reviewScrollOffset = 0; let currentStreak = 0;
 
         // 効果音関連 (変更なし)
         let synth; let isAudioContextStarted = false;
@@ -134,13 +115,11 @@
         // お祝い演出関連 (変更なし)
         let confettiParticles = []; let isCelebrating = false; let celebrationPlayed = false;
 
-        // キャラクター関連
-        let characterState = 'idle'; // 'idle', 'happy', 'sad'
-        const BASE_CHARACTER_X = 50; // 基準X座標
-        const BASE_CHARACTER_Y = 350; // 基準Y座標
-        const BASE_CHARACTER_RADIUS = 25; // 基準半径
+        // キャラクター関連 (変更なし)
+        let characterState = 'idle';
+        const BASE_CHARACTER_X = 50; const BASE_CHARACTER_Y = 350; const BASE_CHARACTER_RADIUS = 25;
 
-        // --- レスポンシブ対応 ---
+        // --- レスポンシブ対応 --- (変更なし)
         const BASE_CANVAS_WIDTH = 600; const BASE_CANVAS_HEIGHT = 400; let scale = 1;
 
         // Canvas描画関連の基準定数 (変更なし)
@@ -151,29 +130,94 @@
         const BASE_FONT_SIZE_TINY = 14;
 
 
-        // --- 計算関連のヘルパー関数 (変更なし) ---
-        function getRandomInt(min, max) { min = Math.ceil(min); max = Math.floor(max); return Math.floor(Math.random() * (max - min + 1)) + min; }
-        function getRandomNonZeroInt(min, max) { let num; do { num = getRandomInt(min, max); } while (num === 0); return num; }
-        function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); return b === 0 ? a : gcd(b, a % b); }
-        function lcm(a, b) { if (a === 0 || b === 0) return 0; return Math.abs(a * b) / gcd(a, b); }
-        function simplifyFractionObj(frac) { if (frac.d === 0) throw new Error("Denominator cannot be zero."); if (frac.n === 0) return { n: 0, d: 1 }; const commonDivisor = gcd(frac.n, frac.d); let simplifiedN = frac.n / commonDivisor; let simplifiedD = frac.d / commonDivisor; if (simplifiedD < 0) { simplifiedN = -simplifiedN; simplifiedD = -simplifiedD; } return { n: simplifiedN, d: simplifiedD }; }
-        function fractionObjToString(frac, useAnd = true) { if (frac.d === 1 || frac.n === 0) { return frac.n.toString(); } if (Math.abs(frac.n) >= frac.d) { const wholePart = Math.trunc(frac.n / frac.d); const remainderN = Math.abs(frac.n % frac.d); if (remainderN === 0) return wholePart.toString(); const remainderFrac = simplifyFractionObj({ n: remainderN, d: frac.d }); const separator = useAnd ? "と" : " "; return `${wholePart}${separator}${remainderFrac.n}/${remainderFrac.d}`; } return `${frac.n}/${frac.d}`; }
-        function parseAnswerInput(inputStr) { inputStr = inputStr.trim().replace(/／/g, '/').replace(/ /g, ''); const mixedMatch = inputStr.match(/^([+-]?\d+)と(\d+)\/(\d+)$/); if (mixedMatch) { const whole = parseInt(mixedMatch[1], 10); const num = parseInt(mixedMatch[2], 10); const den = parseInt(mixedMatch[3], 10); if (isNaN(whole) || isNaN(num) || isNaN(den) || den === 0 || num < 0 || den < 0) return null; const totalNum = whole >= 0 ? (whole * den + num) : (whole * den - num); return simplifyFractionObj({ n: totalNum, d: den }); } const fractionMatch = inputStr.match(/^([+-]?\d+)\/(\d+)$/); if (fractionMatch) { const num = parseInt(fractionMatch[1], 10); const den = parseInt(fractionMatch[2], 10); if (isNaN(num) || isNaN(den) || den === 0 || den < 0) return null; return simplifyFractionObj({ n: num, d: den }); } const numberMatch = inputStr.match(/^[+-]?(\d+(\.\d*)?|\.\d+)$/); if (numberMatch) { const num = parseFloat(inputStr); return isNaN(num) ? null : num; } return null; }
-        function formatAnswer(answer) { if (typeof answer === 'number') { const factor = Math.pow(10, DECIMAL_PLACES + 2); return (Math.round(answer * factor) / factor).toString(); } else if (typeof answer === 'object' && answer !== null && typeof answer.n === 'number') { return fractionObjToString(answer); } return ''; }
+        // --- 計算関連のヘルパー関数 ---
+        /**
+         * 最小値(min)から最大値(max)までのランダムな整数を生成
+         */
+        function getRandomInt(min, max) {
+            min = Math.ceil(min); max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
 
-        // --- 問題生成関数 (変更なし) ---
-        const MAX_NUM_SIMPLE = 10; const MAX_NUM_ADVANCED = 15; const MAX_DENOMINATOR = 12; const DECIMAL_PLACES = 2;
-        function generateRandomFraction(allowImproper = true, allowNegative = false) { let n, d; d = getRandomInt(2, MAX_DENOMINATOR); if (allowImproper) { n = getRandomInt(1, MAX_NUM_ADVANCED); } else { n = getRandomInt(1, d - 1); } if (allowNegative && Math.random() < 0.3) { n = -n; } return simplifyFractionObj({ n, d });}
-        function generateFractionAddition() { const f1 = generateRandomFraction(true, false); const f2 = generateRandomFraction(true, false); const commonDenominator = lcm(f1.d, f2.d); const n1 = f1.n * (commonDenominator / f1.d); const n2 = f2.n * (commonDenominator / f2.d); const answer = simplifyFractionObj({ n: n1 + n2, d: commonDenominator }); const question = `${fractionObjToString(f1)} + ${fractionObjToString(f2)} = ?`; return { question, answer, type: 'fraction' }; }
-        function generateFractionSubtraction() { let f1, f2, answer; do { f1 = generateRandomFraction(true, false); f2 = generateRandomFraction(true, false); const commonDenominator = lcm(f1.d, f2.d); const n1 = f1.n * (commonDenominator / f1.d); const n2 = f2.n * (commonDenominator / f2.d); if (n1 < n2) [f1, f2] = [f2, f1]; const new_n1 = f1.n * (lcm(f1.d, f2.d) / f1.d); const new_n2 = f2.n * (lcm(f1.d, f2.d) / f2.d); answer = simplifyFractionObj({ n: new_n1 - new_n2, d: lcm(f1.d, f2.d) }); } while (answer.n < 0 && Math.random() < 0.7); const question = `${fractionObjToString(f1)} - ${fractionObjToString(f2)} = ?`; return { question, answer, type: 'fraction' }; }
-        function generateFractionMultiplication() { const f1 = generateRandomFraction(false, false); const f2 = generateRandomFraction(false, false); const answer = simplifyFractionObj({ n: f1.n * f2.n, d: f1.d * f2.d }); const question = `${fractionObjToString(f1)} × ${fractionObjToString(f2)} = ?`; return { question, answer, type: 'fraction' }; }
-        function generateFractionDivision() { const f1 = generateRandomFraction(false, false); let f2; do {f2 = generateRandomFraction(false, false);} while (f2.n === 0); const answer = simplifyFractionObj({ n: f1.n * f2.d, d: f1.d * f2.n }); const question = `${fractionObjToString(f1)} ÷ ${fractionObjToString(f2)} = ?`; return { question, answer, type: 'fraction' }; }
-        function generateRandomDecimal() { const factor = Math.pow(10, getRandomInt(1, DECIMAL_PLACES)); const num = getRandomInt(1, MAX_NUM_SIMPLE * factor); return num / factor; }
-        function generateDecimalAddition() { const d1 = generateRandomDecimal(); const d2 = generateRandomDecimal(); const factor = Math.pow(10, DECIMAL_PLACES); const answer = (Math.round(d1 * factor) + Math.round(d2 * factor)) / factor; const question = `${formatAnswer(d1)} + ${formatAnswer(d2)} = ?`; return { question, answer: answer, type: 'decimal' }; }
-        function generateDecimalSubtraction() { let d1, d2, answer; const factor = Math.pow(10, DECIMAL_PLACES); do { d1 = generateRandomDecimal(); d2 = generateRandomDecimal(); if (d1 < d2) [d1, d2] = [d2, d1]; answer = (Math.round(d1 * factor) - Math.round(d2 * factor)) / factor; } while (answer < 0 && Math.random() < 0.7); const question = `${formatAnswer(d1)} - ${formatAnswer(d2)} = ?`; return { question, answer: answer, type: 'decimal' }; }
-        function generateDecimalMultiplication() { const d1 = generateRandomDecimal(); const d2 = getRandomInt(2, 9); const factor = Math.pow(10, DECIMAL_PLACES * 2); const answer = (Math.round(d1 * factor) * d2) / factor; const question = `${formatAnswer(d1)} × ${d2} = ?`; return { question, answer: answer, type: 'decimal' }; }
-        function generateDecimalDivision() { const divisor = getRandomInt(2, 9); const quotient = generateRandomDecimal(); const factor = Math.pow(10, DECIMAL_PLACES * 2); let dividend = (Math.round(quotient * factor) * divisor) / factor; if (Math.abs(dividend) < 0.01) return generateDecimalDivision(); const displayDividend = formatAnswer(dividend); const question = `${displayDividend} ÷ ${divisor} = ?`; const answer = quotient; return { question, answer: answer, type: 'decimal' }; }
-        function generateQuestions(numQs) { questions = []; const questionTypes = [ generateFractionAddition, generateFractionSubtraction, generateFractionMultiplication, generateFractionDivision, generateDecimalAddition, generateDecimalSubtraction, generateDecimalMultiplication, generateDecimalDivision ]; for (let i = 0; i < numQs; i++) { const randomTypeIndex = Math.floor(Math.random() * questionTypes.length); try { questions.push(questionTypes[randomTypeIndex]()); } catch (error) { console.error("Error generating question:", error); i--; } } }
+        /**
+         * ★ ユーザー入力の整数をパースする関数 (簡略化) ★
+         * @param {string} inputStr - ユーザー入力文字列
+         * @returns {number|null} パースされた整数、または不正な形式の場合はnull
+         */
+        function parseAnswerInput(inputStr) {
+            inputStr = inputStr.trim();
+            // 整数（先頭に+/-があってもよい）にマッチするかチェック
+            const numberMatch = inputStr.match(/^[+-]?\d+$/);
+            if (numberMatch) {
+                const num = parseInt(inputStr, 10);
+                // isNaNで数値変換が成功したか確認
+                return isNaN(num) ? null : num;
+            }
+            return null; // 整数でなければnull
+        }
+
+        /**
+         * 解答オブジェクト（数値）を整形された文字列に変換 (整数のみ対応)
+         * @param {number} answer - 解答
+         * @returns {string} 表示用の文字列
+         */
+        function formatAnswer(answer) {
+            if (typeof answer === 'number') {
+                return answer.toString();
+            }
+            return ''; // 不明な形式
+        }
+
+        // --- 問題生成関数 (小学1年生レベルに変更) ---
+
+        /**
+         * ★ 小学1年生レベルの足し算問題を生成 ★
+         * 例: 3 + 5 = ?, 8 + 7 = ? (繰り上がり含む場合あり)
+         */
+        function generateGrade1Addition() {
+            const n1 = getRandomInt(0, 10);
+            const n2 = getRandomInt(0, 10);
+            // 簡単にするため、答えが20を超えないように調整（任意）
+            // if (n1 + n2 > 20) return generateGrade1Addition();
+            const answer = n1 + n2;
+            const question = `${n1} + ${n2} = ?`;
+            return { question, answer, type: 'integer' }; // typeを追加
+        }
+
+        /**
+         * ★ 小学1年生レベルの引き算問題を生成 ★
+         * 例: 8 - 3 = ?, 15 - 7 = ? (繰り下がり含む場合あり)
+         * 答えは必ず0以上になるようにする
+         */
+        function generateGrade1Subtraction() {
+            const n1 = getRandomInt(1, 20); // 引かれる数は少し大きめまで
+            const n2 = getRandomInt(0, n1); // 引く数は引かれる数以下にする
+            const answer = n1 - n2;
+            const question = `${n1} - ${n2} = ?`;
+            return { question, answer, type: 'integer' }; // typeを追加
+        }
+
+        /**
+         * ★ 問題リストを指定された数だけ生成する (小学1年生レベルのみ) ★
+         * @param {number} numQs - 生成する問題数
+         */
+        function generateQuestions(numQs) {
+            questions = [];
+            // ★ 小学1年生レベルの問題タイプのみを使用 ★
+            const questionTypes = [
+                generateGrade1Addition,
+                generateGrade1Subtraction
+            ];
+            for (let i = 0; i < numQs; i++) {
+                const randomTypeIndex = Math.floor(Math.random() * questionTypes.length);
+                try {
+                    questions.push(questionTypes[randomTypeIndex]());
+                } catch (error) {
+                    console.error("Error generating question:", error);
+                    i--; // エラー時は再試行
+                }
+            }
+        }
 
         // --- Canvas描画関連関数 ---
 
@@ -181,10 +225,7 @@
         function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
         /** テキストを描画 (スケール対応) */
-        function drawText(text, x, y, font = ``, color = 'black', align = 'center', baseline = 'alphabetic') {
-            ctx.font = font; ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = baseline;
-            ctx.fillText(text, x, y);
-        }
+        function drawText(text, x, y, font = ``, color = 'black', align = 'center', baseline = 'alphabetic') { ctx.font = font; ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = baseline; ctx.fillText(text, x, y); }
 
         /** プログレスバーを描画 (スケール対応) */
         function drawProgressBar() { // (変更なし)
@@ -195,19 +236,19 @@
             ctx.fillStyle = '#4ade80'; ctx.fillRect(barX, scaledProgressY, barWidth * progress, barHeight);
              if (totalQuestions > 0 && gameState !== 'settings' && gameState !== 'finished' && gameState !== 'review') {
                   const scaledFontSize = Math.round(BASE_FONT_SIZE_TINY * scale);
-                  drawText(`${currentQuestionIndex + 1} / ${totalQuestions} 問目`, canvas.width / 2, scaledProgressY + (25 * scale), `${scaledFontSize}px Inter`, 'grey', 'center', 'middle'); // Baseline middle
+                  drawText(`${currentQuestionIndex + 1} / ${totalQuestions} もんめ`, scaledProgressY + (25 * scale), `${scaledFontSize}px Inter`, 'grey', 'center', 'middle'); // Text Updated
              }
         }
 
         /** 設定画面を描画 (スケール対応) */
         function drawSettingsScreen() { // (変更なし)
             const scaledFontSizeXL = Math.round(BASE_FONT_SIZE_XL * scale); const scaledFontSizeXS = Math.round(BASE_FONT_SIZE_XS * scale);
-            drawText('設定', canvas.width / 2, 150 * scale, `${scaledFontSizeXL}px "M PLUS Rounded 1c"`, 'black');
-            drawText('問題数を選択してスタートボタンを押してください', canvas.width / 2, 200 * scale, `${scaledFontSizeXS}px Inter`, 'grey');
+            drawText('せってい', canvas.width / 2, 150 * scale, `${scaledFontSizeXL}px "M PLUS Rounded 1c"`, 'black'); // Text Updated
+            drawText('もんだいのかずを えらんで スタートしてね', canvas.width / 2, 200 * scale, `${scaledFontSizeXS}px Inter`, 'grey'); // Text Updated
         }
 
         /** トレーニング画面を描画 (スケール対応) */
-        function drawTrainingScreen() { // (変更なし)
+        function drawTrainingScreen() {
             drawProgressBar(); const currentQ = questions[currentQuestionIndex]; if (!currentQ) return;
             const scaledQuestionY = BASE_QUESTION_Y * scale; const scaledFontSizeL = Math.round(BASE_FONT_SIZE_L * scale);
             drawText(currentQ.question, canvas.width / 2, scaledQuestionY, `bold ${scaledFontSizeL}px "M PLUS Rounded 1c"`, '#333');
@@ -215,115 +256,39 @@
             const scaledInputBoxY = BASE_INPUT_BOX_Y * scale; const scaledInputBoxHeight = BASE_INPUT_BOX_HEIGHT * scale;
             const scaledFontSizeXS = Math.round(BASE_FONT_SIZE_XS * scale); const scaledFontSizeS = Math.round(BASE_FONT_SIZE_S * scale); const scaledFontSizeTiny = Math.round(BASE_FONT_SIZE_TINY * scale);
             ctx.strokeStyle = '#a0aec0'; ctx.lineWidth = 1 * scale; ctx.strokeRect(inputBoxX, scaledInputBoxY, inputBoxWidth, scaledInputBoxHeight);
-            drawText('答え:', inputBoxX - (10 * scale), scaledInputBoxY + scaledInputBoxHeight / 2, `${scaledFontSizeXS}px Inter`, 'black', 'right', 'middle'); // Baseline middle
-            drawText(currentAnswer, inputBoxX + (10 * scale), scaledInputBoxY + scaledInputBoxHeight / 2, `${scaledFontSizeS}px Inter`, 'black', 'left', 'middle'); // Baseline middle
+            drawText('こたえ:', inputBoxX - (10 * scale), scaledInputBoxY + scaledInputBoxHeight / 2, `${scaledFontSizeXS}px Inter`, 'black', 'right', 'middle'); // Text Updated
+            drawText(currentAnswer, inputBoxX + (10 * scale), scaledInputBoxY + scaledInputBoxHeight / 2, `${scaledFontSizeS}px Inter`, 'black', 'left', 'middle');
             if (document.activeElement === hiddenInput && Math.floor(Date.now() / 500) % 2 === 0) {
                 ctx.save(); ctx.font = `${scaledFontSizeS}px Inter`; const textWidth = ctx.measureText(currentAnswer).width; const cursorX = inputBoxX + (10 * scale) + textWidth + (2 * scale);
                 ctx.fillStyle = 'black'; ctx.fillRect(cursorX, scaledInputBoxY + (5 * scale), 2 * scale, scaledInputBoxHeight - (10 * scale)); ctx.restore();
             }
-             drawText('※ 分数: 3/4, 帯分数: 1と1/2, 小数: 0.5', canvas.width / 2, scaledInputBoxY + scaledInputBoxHeight + (25 * scale), `${scaledFontSizeTiny}px Inter`, 'grey');
+             // ★ 入力ヒント変更 ★
+             drawText('すうじで こたえを いれてね', canvas.width / 2, scaledInputBoxY + scaledInputBoxHeight + (25 * scale), `${scaledFontSizeTiny}px Inter`, 'grey'); // Text Updated
 
-            // ★ キャラクター描画 ★
-            drawCharacter();
-        }
-
-        /** フィードバックメッセージに適用するアニメーションクラスを管理 */
-        function applyFeedbackEffect() {
-            const feedbackElement = document.createElement('span'); // Create temporary span for animation
-            feedbackElement.textContent = feedback.message;
-            feedbackElement.style.color = feedback.color;
-            feedbackElement.style.fontWeight = 'bold';
-            feedbackElement.style.fontSize = `${Math.round(BASE_FONT_SIZE_S * scale)}px`;
-
-            const feedbackContainer = document.getElementById('feedback-container'); // Need a container
-            if (!feedbackContainer) { // Create container if it doesn't exist (fallback)
-                 console.warn("Feedback container not found");
-                 return;
-            }
-            feedbackContainer.innerHTML = ''; // Clear previous feedback
-
-            if (feedback.effect === 'pop') {
-                feedbackElement.classList.add('feedback-pop');
-            }
-            feedbackContainer.appendChild(feedbackElement);
-
-             // Shake effect on canvas for incorrect answers
-             if (feedback.effect === 'shake') {
-                 canvas.classList.add('animate-shake');
-                 // Remove class after animation ends
-                 setTimeout(() => {
-                     canvas.classList.remove('animate-shake');
-                 }, 400); // Match animation duration
-             }
+            drawCharacter(); // キャラクター描画 (変更なし)
         }
 
         /** フィードバック画面を描画 (スケール対応) */
-        function drawFeedbackScreen() {
-            drawTrainingScreen(); // 問題と入力内容は表示したまま
-
-            // Canvas上にフィードバックテキストを描画
-            const scaledFeedbackY = BASE_FEEDBACK_Y * scale;
-            const scaledFontSizeS = Math.round(BASE_FONT_SIZE_S * scale);
-            let message = feedback.message;
-            // ★ ストリークメッセージを追加 ★
-            if (currentStreak >= 3) {
-                 message += ` (${currentStreak}連続正解!)`;
-            }
+        function drawFeedbackScreen() { // (変更なし)
+            drawTrainingScreen(); const scaledFeedbackY = BASE_FEEDBACK_Y * scale; const scaledFontSizeS = Math.round(BASE_FONT_SIZE_S * scale);
+            let message = feedback.message; if (currentStreak >= 3) { message += ` (${currentStreak}れんぞく せいかい!)`; } // Text Updated
             drawText(message, canvas.width / 2, scaledFeedbackY, `bold ${scaledFontSizeS}px Inter`, feedback.color);
-
-            // アニメーション効果はCSSで行う (Canvas外の要素、またはCanvas自体に適用)
-            // applyFeedbackEffect(); // This function would manage CSS classes if feedback was HTML
         }
 
-
-        // --- キャラクター描画 ---
-        function drawCharacter() {
-            const x = BASE_CHARACTER_X * scale;
-            const y = BASE_CHARACTER_Y * scale;
-            const r = BASE_CHARACTER_RADIUS * scale;
-
-            // Body
-            ctx.beginPath();
-            ctx.arc(x, y, r, 0, Math.PI * 2);
-            ctx.fillStyle = '#ffeb3b'; // Yellow face
-            ctx.fill();
-            ctx.strokeStyle = '#fbc02d'; // Darker yellow outline
-            ctx.lineWidth = 2 * scale;
-            ctx.stroke();
-
-            // Eyes
-            const eyeRX = r * 0.3;
-            const eyeRY = r * 0.4;
-            const eyeY = y - r * 0.15;
-            ctx.fillStyle = 'black';
-            ctx.beginPath();
-            ctx.ellipse(x - r * 0.3, eyeY, eyeRX, eyeRY, 0, 0, Math.PI * 2); // Left eye
-            ctx.fill();
-            ctx.beginPath();
-            ctx.ellipse(x + r * 0.3, eyeY, eyeRX, eyeRY, 0, 0, Math.PI * 2); // Right eye
-            ctx.fill();
-
-            // Mouth
-            ctx.beginPath();
-            ctx.lineWidth = 2 * scale;
-            ctx.strokeStyle = 'black';
-            const mouthY = y + r * 0.3;
-            const mouthWidth = r * 0.6;
-
-            if (characterState === 'happy') {
-                // Smile
-                ctx.arc(x, mouthY - r * 0.1, mouthWidth / 2, 0, Math.PI, false);
-            } else if (characterState === 'sad') {
-                // Frown
-                ctx.arc(x, mouthY + r * 0.2, mouthWidth / 2, Math.PI, Math.PI * 2, false);
-            } else { // idle
-                // Neutral line
-                ctx.moveTo(x - mouthWidth / 2, mouthY);
-                ctx.lineTo(x + mouthWidth / 2, mouthY);
-            }
+        /** キャラクター描画 */
+        function drawCharacter() { // (変更なし)
+            const x = BASE_CHARACTER_X * scale; const y = BASE_CHARACTER_Y * scale; const r = BASE_CHARACTER_RADIUS * scale;
+            ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = '#ffeb3b'; ctx.fill();
+            ctx.strokeStyle = '#fbc02d'; ctx.lineWidth = 2 * scale; ctx.stroke();
+            const eyeRX = r * 0.3; const eyeRY = r * 0.4; const eyeY = y - r * 0.15; ctx.fillStyle = 'black';
+            ctx.beginPath(); ctx.ellipse(x - r * 0.3, eyeY, eyeRX, eyeRY, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(x + r * 0.3, eyeY, eyeRX, eyeRY, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.lineWidth = 2 * scale; ctx.strokeStyle = 'black'; const mouthY = y + r * 0.3; const mouthWidth = r * 0.6;
+            if (characterState === 'happy') { ctx.arc(x, mouthY - r * 0.1, mouthWidth / 2, 0, Math.PI, false); }
+            else if (characterState === 'sad') { ctx.arc(x, mouthY + r * 0.2, mouthWidth / 2, Math.PI, Math.PI * 2, false); }
+            else { ctx.moveTo(x - mouthWidth / 2, mouthY); ctx.lineTo(x + mouthWidth / 2, mouthY); }
             ctx.stroke();
         }
-
 
         // --- お祝い演出（紙吹雪）関連 (変更なし) ---
         const confettiColors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800', '#ff5722'];
@@ -334,18 +299,19 @@
 
          /** 終了画面を描画 (スケール対応) */
         function drawFinishedScreen() { // (変更なし)
-            const finalScoreText = `終了！ ${totalQuestions}問中 ${score}問正解！`; const accuracy = totalQuestions > 0 ? ((score / totalQuestions) * 100) : 0; const accuracyText = `最終正答率: ${accuracy.toFixed(1)}%`;
+            const finalScoreText = `おわり！ ${totalQuestions}もん ちゅう ${score}もん せいかい！`; // Text Updated
+            const accuracy = totalQuestions > 0 ? ((score / totalQuestions) * 100) : 0; const accuracyText = `せいかいりつ: ${accuracy.toFixed(1)}%`; // Text Updated
             if (accuracy >= 80 && !celebrationPlayed) {
                 isCelebrating = true; celebrationPlayed = true; createConfetti();
                 if (synth && isAudioContextStarted) { try { synth.triggerAttackRelease("C5", "8n", Tone.now()); synth.triggerAttackRelease("E5", "8n", Tone.now() + 0.15); synth.triggerAttackRelease("G5", "8n", Tone.now() + 0.3); synth.triggerAttackRelease("C6", "4n", Tone.now() + 0.45); } catch(e) { console.error("Error playing celebration sound:", e); } }
             }
             if (isCelebrating) { updateConfetti(); drawConfetti(); }
             const scaledFontSizeXL = Math.round(BASE_FONT_SIZE_XL * scale); const scaledFontSizeM = Math.round(BASE_FONT_SIZE_M * scale); const scaledFontSizeXXS = Math.round(BASE_FONT_SIZE_XXS * scale); const scaledFontSizeXS = Math.round(BASE_FONT_SIZE_XS * scale);
-            drawText('お疲れ様でした！', canvas.width / 2, 120 * scale, `${scaledFontSizeXL}px "M PLUS Rounded 1c"`, 'black');
+            drawText('おつかれさま！', canvas.width / 2, 120 * scale, `${scaledFontSizeXL}px "M PLUS Rounded 1c"`, 'black'); // Text Updated
             drawText(finalScoreText, canvas.width / 2, 180 * scale, `${scaledFontSizeM}px Inter`, '#4a5568');
             drawText(accuracyText, canvas.width / 2, 220 * scale, `${scaledFontSizeM}px Inter`, '#4a5568');
-            if (mistakes.length > 0) { drawText(`(${mistakes.length}問の間違いがありました)`, canvas.width / 2, 260 * scale, `${scaledFontSizeXXS}px Inter`, 'grey'); }
-            else { drawText('全問正解です！素晴らしい！ 🎉', canvas.width / 2, 260 * scale, `${scaledFontSizeXS}px Inter`, 'green');
+            if (mistakes.length > 0) { drawText(`(${mistakes.length}もん まちがえたね)`, canvas.width / 2, 260 * scale, `${scaledFontSizeXXS}px Inter`, 'grey'); } // Text Updated
+            else { drawText('ぜんぶ せいかい！すごい！ 🎉', canvas.width / 2, 260 * scale, `${scaledFontSizeXS}px Inter`, 'green'); // Text Updated
                  if (!celebrationPlayed) { isCelebrating = true; celebrationPlayed = true; createConfetti(); if (synth && isAudioContextStarted) { try { synth.triggerAttackRelease("C5", "8n", Tone.now()); synth.triggerAttackRelease("E5", "8n", Tone.now() + 0.15); synth.triggerAttackRelease("G5", "8n", Tone.now() + 0.3); synth.triggerAttackRelease("C6", "4n", Tone.now() + 0.45); } catch(e) { console.error("Error playing sound:", e); } } }
             }
             if (isCelebrating) { requestAnimationFrame(draw); }
@@ -354,8 +320,8 @@
         /** レビュー画面を描画 (スケール対応) */
         function drawReviewScreen() { // (変更なし)
             const scaledFontSizeM = Math.round(BASE_FONT_SIZE_M * scale); const scaledFontSizeXS = Math.round(BASE_FONT_SIZE_XS * scale); const scaledFontSizeXXS = Math.round(BASE_FONT_SIZE_XXS * scale);
-            drawText('間違いの確認', canvas.width / 2, 40 * scale, `${scaledFontSizeM}px "M PLUS Rounded 1c"`, 'black');
-            if (mistakes.length === 0) { drawText('間違えた問題はありませんでした。', canvas.width / 2, 150 * scale, `${scaledFontSizeXS}px Inter`, 'green'); return; }
+            drawText('まちがいのかくにん', canvas.width / 2, 40 * scale, `${scaledFontSizeM}px "M PLUS Rounded 1c"`, 'black'); // Text Updated
+            if (mistakes.length === 0) { drawText('まちがえた もんだいは なかったよ', canvas.width / 2, 150 * scale, `${scaledFontSizeXS}px Inter`, 'green'); return; } // Text Updated
             const itemHeight = 85 * scale; const startY = 80 * scale; const contentWidth = canvas.width * 0.9; const startX = (canvas.width - contentWidth) / 2; const reviewAreaTop = startY - (10 * scale); const reviewAreaHeight = canvas.height - startY - (20 * scale);
              ctx.save(); ctx.beginPath(); ctx.rect(0, reviewAreaTop, canvas.width, reviewAreaHeight); ctx.clip();
              const drawStartY = startY - reviewScrollOffset;
@@ -363,9 +329,9 @@
                 const yPos = drawStartY + index * itemHeight; if (yPos + itemHeight < reviewAreaTop || yPos > reviewAreaTop + reviewAreaHeight) { return; }
                 ctx.fillStyle = index % 2 === 0 ? '#f7fafc' : '#edf2f7'; ctx.fillRect(startX, yPos, contentWidth, itemHeight - (5 * scale));
                 const textY1 = yPos + (20 * scale); const textY2 = yPos + (45 * scale); const textY3 = yPos + (70 * scale);
-                drawText(`問題 ${mistake.index + 1}: ${mistake.questionObj.question}`, startX + (10 * scale), textY1, `${scaledFontSizeXXS}px "M PLUS Rounded 1c"`, '#2d3748', 'left');
-                drawText(`あなたの答え: ${mistake.userAnswerRaw}`, startX + (15 * scale), textY2, `${scaledFontSizeXXS}px Inter`, '#e53e3e', 'left');
-                drawText(`正解: ${formatAnswer(mistake.correctAnswer)}`, startX + (15 * scale), textY3, `${scaledFontSizeXXS}px Inter`, '#38a169', 'left');
+                drawText(`もんだい ${mistake.index + 1}: ${mistake.questionObj.question}`, startX + (10 * scale), textY1, `${scaledFontSizeXXS}px "M PLUS Rounded 1c"`, '#2d3748', 'left'); // Text Updated
+                drawText(`きみの こたえ: ${mistake.userAnswerRaw}`, startX + (15 * scale), textY2, `${scaledFontSizeXXS}px Inter`, '#e53e3e', 'left'); // Text Updated
+                drawText(`ただしい こたえ: ${formatAnswer(mistake.correctAnswer)}`, startX + (15 * scale), textY3, `${scaledFontSizeXXS}px Inter`, '#38a169', 'left'); // Text Updated
             });
             ctx.restore();
             const totalContentHeight = mistakes.length * itemHeight; const visibleHeight = reviewAreaHeight;
@@ -393,7 +359,7 @@
         function updateStatsDisplay() { // (変更なし)
              const attemptedCount = attemptedQuestions.length; const correctCount = attemptedQuestions.filter(q => q.isCorrect).length;
              const accuracy = attemptedCount > 0 ? ((correctCount / attemptedCount) * 100).toFixed(1) : '---';
-             statsArea.textContent = `累計正答率: ${accuracy}% (${correctCount}/${attemptedCount}問)`;
+             statsArea.textContent = `せいかいりつ: ${accuracy}% (${correctCount}/${attemptedCount}もん)`; // Text Updated
         }
 
         /** 操作ボタンの表示切替 */
@@ -421,89 +387,53 @@
         async function startTraining() { // (変更なし)
             await startAudioContext(); totalQuestions = parseInt(numQuestionsSelect.value, 10);
             currentQuestionIndex = 0; score = 0; attemptedQuestions = []; mistakes = []; reviewScrollOffset = 0;
-            isCelebrating = false; celebrationPlayed = false; confettiParticles = []; currentStreak = 0; characterState = 'idle'; // Reset state
+            isCelebrating = false; celebrationPlayed = false; confettiParticles = []; currentStreak = 0; characterState = 'idle';
             generateQuestions(totalQuestions); gameState = 'training'; currentAnswer = ''; hiddenInput.value = '';
             switchControls('training'); hiddenInput.focus();
             draw(); requestAnimationFrame(draw);
         }
 
         /** 答えをチェック */
-        function checkAnswer() {
+        function checkAnswer() { // (変更なし - 小文字化済み)
             if (gameState !== 'training') return;
-
-            const userAnswerRaw = hiddenInput.value.toLowerCase(); // 小文字化
-            currentAnswer = userAnswerRaw;
-            const parsedUserAnswer = parseAnswerInput(userAnswerRaw);
+            const userAnswerRaw = hiddenInput.value.toLowerCase(); currentAnswer = userAnswerRaw;
+            const parsedUserAnswer = parseAnswerInput(userAnswerRaw); // ★ 簡略化された関数を使用
             const currentQ = questions[currentQuestionIndex]; const correctAnswer = currentQ.answer;
             let isCorrect = false; const correctAnswerStr = formatAnswer(correctAnswer);
-
-            // アニメーション効果リセット
-            feedback.effect = null;
-            canvas.classList.remove('animate-shake'); // Ensure shake is removed
+            feedback.effect = null; canvas.classList.remove('animate-shake');
 
             if (parsedUserAnswer === null) {
-                feedback = { message: '不正な入力形式です', color: 'orange', effect: 'shake' }; // Shake on invalid
-                isCorrect = false;
-                currentStreak = 0; // Reset streak
-                characterState = 'sad'; // Sad face
+                feedback = { message: 'すうじを いれてね', color: 'orange', effect: 'shake' }; // Text Updated
+                isCorrect = false; currentStreak = 0; characterState = 'sad';
             } else {
-                // 正誤判定 (変更なし)
-                if (typeof correctAnswer === 'object' && correctAnswer !== null && typeof correctAnswer.n === 'number') {
-                    if (typeof parsedUserAnswer === 'object' && parsedUserAnswer !== null && typeof parsedUserAnswer.n === 'number') { isCorrect = parsedUserAnswer.n === correctAnswer.n && parsedUserAnswer.d === correctAnswer.d; }
-                    else if (typeof parsedUserAnswer === 'number') { const correctValue = correctAnswer.n / correctAnswer.d; isCorrect = Math.abs(parsedUserAnswer - correctValue) < 0.00001; }
-                } else if (typeof correctAnswer === 'number') {
-                     if (typeof parsedUserAnswer === 'number') { isCorrect = Math.abs(parsedUserAnswer - correctAnswer) < 0.00001; }
-                     else if (typeof parsedUserAnswer === 'object' && parsedUserAnswer !== null) { const userValue = parsedUserAnswer.n / parsedUserAnswer.d; isCorrect = Math.abs(userValue - correctAnswer) < 0.00001; }
-                }
+                // ★ 整数同士の比較のみ ★
+                isCorrect = (parsedUserAnswer === correctAnswer);
 
                 if (isCorrect) {
-                    score++;
-                    currentStreak++; // Increment streak
-                    feedback = { message: '正解！ 🎉', color: 'green', effect: 'pop' }; // Pop effect
-                    characterState = 'happy'; // Happy face
+                    score++; currentStreak++; feedback = { message: 'せいかい！ 🎉', color: 'green', effect: 'pop' }; // Text Updated
+                    characterState = 'happy';
                     if (synth && isAudioContextStarted) { try { synth.triggerAttackRelease("C5", "8n", Tone.now()); } catch(e) { console.error("Error playing sound:", e); } }
-                    // ★ ストリーク効果音 ★
-                    if (currentStreak >= 3 && synth && isAudioContextStarted) {
-                         try { // 短い上昇音
-                             synth.triggerAttackRelease("E5", "16n", Tone.now() + 0.1);
-                             synth.triggerAttackRelease("G5", "16n", Tone.now() + 0.2);
-                         } catch(e) { console.error("Error playing streak sound:", e); }
-                    }
+                    if (currentStreak >= 3 && synth && isAudioContextStarted) { try { synth.triggerAttackRelease("E5", "16n", Tone.now() + 0.1); synth.triggerAttackRelease("G5", "16n", Tone.now() + 0.2); } catch(e) { console.error("Error playing streak sound:", e); } }
                 } else {
-                    currentStreak = 0; // Reset streak
-                    feedback = { message: `残念！ 正解は ${correctAnswerStr} でした`, color: 'red', effect: 'shake' }; // Shake effect
-                    characterState = 'sad'; // Sad face
+                    currentStreak = 0; feedback = { message: `ざんねん！ こたえは ${correctAnswerStr} だよ`, color: 'red', effect: 'shake' }; // Text Updated
+                    characterState = 'sad';
                     if (synth && isAudioContextStarted) { try { synth.triggerAttackRelease("A3", "8n", Tone.now()); } catch(e) { console.error("Error playing sound:", e); } }
                 }
             }
             attemptedQuestions.push({ index: currentQuestionIndex, questionObj: currentQ, userAnswerRaw: userAnswerRaw, userAnswerParsed: parsedUserAnswer, correctAnswer: correctAnswer, isCorrect: isCorrect });
             if (!isCorrect) { mistakes.push(attemptedQuestions[attemptedQuestions.length - 1]); }
-
             gameState = 'feedback'; switchControls('feedback'); hiddenInput.blur();
-
-             // ★ シェイクアニメーション適用 ★
-             if (feedback.effect === 'shake') {
-                 canvas.classList.add('animate-shake');
-                 setTimeout(() => canvas.classList.remove('animate-shake'), 400);
-             }
-
+             if (feedback.effect === 'shake') { canvas.classList.add('animate-shake'); setTimeout(() => canvas.classList.remove('animate-shake'), 400); }
             draw();
         }
 
         /** 次の問題へ */
-        function nextQuestion() {
-            if (gameState !== 'feedback') return;
-            currentQuestionIndex++;
-            characterState = 'idle'; // Reset character state
-            feedback.effect = null; // Reset effect
-            canvas.classList.remove('animate-shake'); // Ensure shake is removed
-
+        function nextQuestion() { // (変更なし)
+            if (gameState !== 'feedback') return; currentQuestionIndex++; characterState = 'idle'; feedback.effect = null; canvas.classList.remove('animate-shake');
             if (currentQuestionIndex < totalQuestions) {
                 gameState = 'training'; currentAnswer = ''; hiddenInput.value = '';
                 switchControls('training'); hiddenInput.focus(); requestAnimationFrame(draw);
-            } else {
-                gameState = 'finished'; switchControls('finished'); draw();
-            }
+            } else { gameState = 'finished'; switchControls('finished'); draw(); }
         }
 
          /** リスタート */
@@ -534,23 +464,18 @@
          }
 
 
-        // --- イベントリスナーの設定 ---
+        // --- イベントリスナーの設定 --- (変更なし)
         startButton.addEventListener('click', async () => { await startTraining(); });
         submitButton.addEventListener('click', checkAnswer);
         nextButton.addEventListener('click', nextQuestion);
         restartButton.addEventListener('click', restartTraining);
         reviewButton.addEventListener('click', showReview);
         backToStartButton.addEventListener('click', backToStart);
-
         hiddenInput.addEventListener('input', (e) => { if (gameState === 'training') { currentAnswer = e.target.value; } });
         hiddenInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); if (gameState === 'training') { checkAnswer(); } else if (gameState === 'feedback') { nextQuestion(); } } });
-
-        // ★ 入力フィールドフォーカス時にCanvasを中央にスクロール ★ (変更なし)
         hiddenInput.addEventListener('focus', () => { setTimeout(() => { canvas.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300); });
-
         canvas.addEventListener('click', async (e) => { await startAudioContext(); if (gameState === 'training') { const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height; const canvasX = (e.clientX - rect.left) * scaleX; const canvasY = (e.clientY - rect.top) * scaleY; const inputBoxWidth = canvas.width * 0.7; const inputBoxX = (canvas.width - inputBoxWidth) / 2; const scaledInputBoxY = BASE_INPUT_BOX_Y * scale; const scaledInputBoxHeight = BASE_INPUT_BOX_HEIGHT * scale; if (canvasX >= inputBoxX && canvasX <= inputBoxX + inputBoxWidth && canvasY >= scaledInputBoxY && canvasY <= scaledInputBoxY + scaledInputBoxHeight) { hiddenInput.focus(); requestAnimationFrame(draw); } } });
         canvas.addEventListener('wheel', (e) => { if (gameState === 'review' && mistakes.length > 0) { e.preventDefault(); const itemHeight = 85 * scale; const totalContentHeight = mistakes.length * itemHeight; const visibleHeight = canvas.height - (80 * scale) - (20 * scale); if (totalContentHeight > visibleHeight) { reviewScrollOffset += e.deltaY * 0.5; reviewScrollOffset = Math.max(0, reviewScrollOffset); reviewScrollOffset = Math.min(reviewScrollOffset, totalContentHeight - visibleHeight + (20 * scale)); draw(); } } }, { passive: false });
-
         window.addEventListener('resize', resizeCanvas);
 
 
