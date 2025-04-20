@@ -1,194 +1,106 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>算数トレーニング Canvas版</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=M+PLUS+Rounded+1c:wght@500;700&display=swap" rel="stylesheet" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
-
-<style>
-html,body{height:100%;overflow-x:hidden}
-body{font-family:'Inter','M PLUS Rounded 1c',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:0.75rem}
-canvas{display:block;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.1);border-radius:12px;max-width:100%;height:auto}
-#hidden-input{position:absolute;left:-9999px;top:-9999px;opacity:0}
-.choice-btn{min-width:64px;min-height:48px}@media(min-width:768px){.choice-btn{min-width:76px}}
-</style>
-</head>
-
-<body class="bg-gradient-to-br from-teal-100 to-cyan-200">
-
-<!-- ===== ヘッダー ===== -->
-<div class="w-full max-w-2xl text-center mb-2">
-  <h1 class="font-bold text-gray-800 text-2xl md:text-3xl">算数トレーニング Canvas版</h1>
-  <div id="stats-area" class="text-lg font-semibold text-gray-700 h-6"></div>
-</div>
-
-<!-- ===== Canvas ===== -->
-<canvas id="mathCanvas" style="max-height:65vh"></canvas>
-<input id="hidden-input" type="text" autocomplete="off" enterkeyhint="done" />
-
-<!-- ===== コントロール ===== -->
-<div id="controls" class="flex flex-wrap justify-center gap-2 sm:gap-3 w-full max-w-lg mt-2">
-
-  <!-- ▼ 設定 -->
-  <div id="settings-controls" class="flex flex-wrap justify-center items-center gap-2 sm:gap-3">
-    <label for="difficulty" class="text-gray-700 font-medium">レベル:</label>
-    <select id="difficulty" class="rounded-lg border-gray-300 focus:ring-teal-400 p-2 text-base">
-      <option value="g1">小１</option>
-      <option value="std" selected>標準</option>
-    </select>
-    <label for="num-questions" class="text-gray-700 font-medium ml-1">問題数:</label>
-    <select id="num-questions" class="rounded-lg border-gray-300 focus:ring-teal-400 p-2 text-base">
-      <option value="5">5</option><option value="10" selected>10</option>
-      <option value="15">15</option><option value="20">20</option>
-    </select>
-    <button id="start-button" class="control-button bg-teal-500 hover:bg-teal-600 text-white font-bold rounded-lg shadow px-4 py-2">スタート</button>
-  </div>
-
-  <!-- ▼ 進行中 -->
-  <div id="training-controls" class="hidden flex flex-wrap justify-center gap-2 sm:gap-3">
-    <button id="submit-button" class="control-button bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow px-4 py-2">こたえ合わせ</button>
-    <button id="next-button" class="control-button bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg shadow px-4 py-2 hidden">つぎ</button>
-  </div>
-
-  <!-- ▼ 終了 -->
-  <div id="end-controls" class="hidden flex flex-wrap justify-center gap-2 sm:gap-3">
-    <button id="restart-button" class="control-button bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-lg shadow px-4 py-2">もう一度</button>
-    <button id="review-button"  class="control-button bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg shadow px-4 py-2">間違い確認</button>
-  </div>
-
-  <!-- ▼ レビュー -->
-  <div id="review-controls" class="hidden flex flex-wrap justify-center gap-2 sm:gap-3">
-    <button id="back-to-start-button" class="control-button bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg shadow px-4 py-2">最初の画面へ</button>
-  </div>
-
-  <!-- ▼ 小１モード用の選択肢ボタンコンテナ -->
-  <div id="choice-buttons" class="hidden flex flex-wrap justify-center gap-2 sm:gap-3 mt-2"></div>
-</div>
-
-<script>
-/* ===================== 既存コードを少しだけ整理しつつ追記 ===================== */
-
-/* --- 元の変数・定数に difficulty を足す --- */
+/* ===================== 追加パッチ ===================== */
 const difficultySelect = document.getElementById('difficulty');
-let difficulty = 'std';   // 'std' or 'g1'
+let difficulty = 'std';
 
-/* --- 小１問題ジェネレータ（20 までの足し算・引き算） --- */
-function generateG1Question(){
-  const op = Math.random()<0.5?'+':'-';
-  let a,b,ans;
-  if(op==='+'){
-    a = getRandomInt(0,10); b = getRandomInt(0,10-a); ans = a+b;
-  }else{
-    a = getRandomInt(0,10); b = getRandomInt(0,a); ans = a-b;
+/* --- 小１用の問題 --- */
+function generateG1Question() {
+  const op = Math.random() < 0.5 ? '+' : '-';
+  let a, b, ans;
+  if (op === '+') {
+    a = getRandomInt(0, 10);
+    b = getRandomInt(0, 10 - a);
+    ans = a + b;
+  } else {
+    a = getRandomInt(0, 10);
+    b = getRandomInt(0, a);
+    ans = a - b;
   }
-  return {question:`${a} ${op} ${b} = ?`,answer:ans,type:'int'};
+  return { question: `${a} ${op} ${b} = ?`, answer: ans, type: 'int' };
 }
 
-/* --- 元の generateQuestions を拡張 --- */
-function generateQuestions(numQs){
-  questions=[];
-  if(difficulty==='g1'){
-    for(let i=0;i<numQs;i++) questions.push(generateG1Question());
-    return;
+/* --- generateQuestions をラップ --- */
+const _genQs = generateQuestions;
+generateQuestions = function (n) {
+  questions = [];
+  if (difficulty === 'g1') {
+    for (let i = 0; i < n; i++) questions.push(generateG1Question());
+  } else {
+    _genQs(n);           // 元の高度な問題
   }
-  /* ↓ ここは元の高度な生成ロジック（ fractions / decimals ）をそのまま残す ↓ */
-  const types=[generateFractionAddition,generateFractionSubtraction,generateFractionMultiplication,generateFractionDivision,generateDecimalAddition,generateDecimalSubtraction,generateDecimalMultiplication,generateDecimalDivision];
-  for(let i=0;i<numQs;i++){
-    const q=types[Math.floor(Math.random()*types.length)]();
-    questions.push(q);
-  }
-}
+};
 
-/* ---------- 小１モード：三択ボタンで回答 ---------- */
+/* --- 三択ボタン UI --- */
 const choiceArea = document.getElementById('choice-buttons');
-
-function showChoiceButtons(correctValue){
-  choiceArea.innerHTML='';
+function showChoiceButtons(correct) {
+  choiceArea.innerHTML = '';
   choiceArea.classList.remove('hidden');
-
-  // 正解＋ダミー2個
-  const choices=[correctValue];
-  while(choices.length<3){
-    const n=getRandomInt(0,20);
-    if(!choices.includes(n)) choices.push(n);
+  const list = [correct];
+  while (list.length < 3) {
+    const v = getRandomInt(0, 20);
+    if (!list.includes(v)) list.push(v);
   }
-  // シャッフル
-  choices.sort(()=>Math.random()-0.5);
-
-  choices.forEach(val=>{
-    const btn=document.createElement('button');
-    btn.textContent=val;
-    btn.className='choice-btn bg-white rounded-lg border border-gray-300 shadow text-lg font-bold active:scale-95 transition';
-    btn.addEventListener('click',()=>{
-      hiddenInput.value=val;           // 既存ロジックを再利用
-      choiceArea.classList.add('pointer-events-none'); // 二重タップ防止
+  list.sort(() => Math.random() - 0.5);
+  list.forEach(v => {
+    const btn = document.createElement('button');
+    btn.textContent = v;
+    btn.className =
+      'choice-btn bg-white rounded-lg border border-gray-300 shadow text-lg font-bold active:scale-95 transition';
+    btn.onclick = () => {
+      hiddenInput.value = v;
       checkAnswer();
-      setTimeout(()=>choiceArea.classList.remove('pointer-events-none'),300);
-    });
+    };
     choiceArea.appendChild(btn);
   });
 }
-
-function hideChoiceButtons(){
+function hideChoiceButtons() {
   choiceArea.classList.add('hidden');
 }
 
-/* --- drawTrainingScreen を一部だけ書き換え：小１は入力欄非表示 --- */
-const originalDrawTrainingScreen = drawTrainingScreen;  // 元の参照
-drawTrainingScreen = function(){
-  if(difficulty==='g1'){
-    // 入力欄は Canvas に描かず、代わりに choiceButtons を表示
+/* --- drawTrainingScreen の差し替え --- */
+const _drawTraining = drawTrainingScreen;
+drawTrainingScreen = function () {
+  if (difficulty === 'g1') {
     drawProgressBar();
-    const q=questions[currentQuestionIndex];
-    const scaledFont = Math.round(BASE_FONT_SIZE_L*scale);
-    drawText(q.question,canvas.width/2,BASE_QUESTION_Y*scale,`bold ${scaledFont}px "M PLUS Rounded 1c"`,'#333');
-    // ボタンを作る
-    if(choiceArea.classList.contains('hidden')) showChoiceButtons(q.answer);
-  }else{
+    const q = questions[currentQuestionIndex];
+    const f = Math.round(BASE_FONT_SIZE_L * scale);
+    drawText(q.question, canvas.width / 2, BASE_QUESTION_Y * scale,
+      `bold ${f}px "M PLUS Rounded 1c"`, '#333');
+    if (choiceArea.classList.contains('hidden')) showChoiceButtons(q.answer);
+  } else {
     hideChoiceButtons();
-    originalDrawTrainingScreen();
+    _drawTraining();
   }
-}
+};
 
-/* ---------- startTraining を上書き：difficulty 取得 & ボタン表示制御 ---------- */
-const originalStartTraining = startTraining;
-startTraining = async function(){
+/* --- startTraining をフック --- */
+const _start = startTraining;
+startTraining = async function () {
   difficulty = difficultySelect.value;
   hideChoiceButtons();
-  await originalStartTraining();
-  if(difficulty==='g1'){
-    submitButton.classList.add('hidden'); // 手入力しない
-  }else{
-    submitButton.classList.remove('hidden');
+  await _start();
+  if (difficulty === 'g1') submitButton.classList.add('hidden');
+  else submitButton.classList.remove('hidden');
+};
+
+/* --- checkAnswer 後に選択肢を隠す --- */
+const _check = checkAnswer;
+checkAnswer = function () {
+  _check();
+  if (difficulty === 'g1' &&
+      (gameState === 'feedback' || gameState === 'finished')) {
+    hideChoiceButtons();
   }
-}
+};
 
-/* ---------- checkAnswer 末尾に choiceArea を消す処理 ---------- */
-const originalCheckAnswer = checkAnswer;
-checkAnswer = function(){
-  originalCheckAnswer();
-  if(difficulty==='g1' && (gameState==='feedback' || gameState==='finished')) hideChoiceButtons();
-}
+/* --- 数値だけを許可 --- */
+const _parse = parseAnswerInput;
+parseAnswerInput = function (s) {
+  if (difficulty === 'g1') return parseInt(s, 10);
+  return _parse(s);
+};
 
-/* ---------- その他：正誤判定に 'int' タイプを許可 ---------- */
-const originalParseAnswer = parseAnswerInput;
-parseAnswerInput = function(str){
-  if(difficulty==='g1') return parseInt(str,10);
-  return originalParseAnswer(str);
-}
-
-/* ===================== イベント登録（新規） ===================== */
-difficultySelect.addEventListener('change',()=>{
-  difficulty=difficultySelect.value;
+/* --- イベント --- */
+difficultySelect.addEventListener('change', () => {
+  difficulty = difficultySelect.value;
 });
-
-/* ===================== 起動 ===================== */
-resizeCanvas();   // 既存 init の前方で呼ばれているので挿入不要
-</script>
-</body>
-</html>
+/* ===================== 追加パッチここまで ===================== */
