@@ -1,106 +1,318 @@
-/* ===================== 追加パッチ ===================== */
-const difficultySelect = document.getElementById('difficulty');
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>算数トレーニング Canvas版</title>
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Tone.js：効果音 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+
+<style>
+html,body{height:100%;overflow-x:hidden}
+body{font-family:system-ui,'Inter','M PLUS Rounded 1c',sans-serif;display:flex;flex-direction:column;align-items:center;padding:16px;background:linear-gradient(135deg,#d3f8f2 0%,#c4f0ff 100%)}
+canvas{background:#fff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.1);max-width:100%;height:auto}
+#hidden-input{position:absolute;left:-9999px;top:-9999px;opacity:0}
+.choice-btn{min-width:72px;min-height:52px}
+</style>
+</head>
+
+<body>
+  <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">算数トレーニング Canvas版</h1>
+  <div id="stats" class="h-6 mb-2 text-gray-700 font-semibold"></div>
+
+  <!-- 描画領域 -->
+  <canvas id="board" style="max-height:65vh"></canvas>
+  <input id="hidden-input" autocomplete="off" enterkeyhint="done">
+
+  <!-- コントロール群 -->
+  <div id="ctrl" class="w-full max-w-lg flex flex-wrap justify-center gap-2 mt-3">
+
+    <!-- 設定 -->
+    <div id="set-ctrl" class="flex flex-wrap gap-2 justify-center items-center">
+      <label class="font-medium text-gray-700">レベル:</label>
+      <select id="difficulty" class="p-2 border rounded-lg">
+        <option value="g1">小１</option>
+        <option value="std" selected>標準</option>
+      </select>
+
+      <label class="font-medium text-gray-700 ml-2">問題数:</label>
+      <select id="q-count" class="p-2 border rounded-lg">
+        <option>5</option><option selected>10</option><option>15</option><option>20</option>
+      </select>
+
+      <button id="btn-start" class="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white font-bold rounded-lg shadow">スタート</button>
+    </div>
+
+    <!-- 進行中 -->
+    <div id="play-ctrl" class="hidden flex gap-2">
+      <button id="btn-submit" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow">こたえ合わせ</button>
+      <button id="btn-next"   class="hidden px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg shadow">つぎ</button>
+    </div>
+
+    <!-- 終了 -->
+    <div id="end-ctrl" class="hidden flex gap-2">
+      <button id="btn-retry"  class="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-lg shadow">もう一度</button>
+      <button id="btn-review" class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg shadow">間違い確認</button>
+    </div>
+
+    <!-- レビュー -->
+    <div id="rev-ctrl" class="hidden flex">
+      <button id="btn-back" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg shadow">最初の画面へ</button>
+    </div>
+
+  </div>
+
+  <!-- 小１用 三択ボタン -->
+  <div id="choice-box" class="hidden flex flex-wrap justify-center gap-2 mt-3"></div>
+
+<script>
+/* ====== 基本パラメータ ====== */
+const cvs  = document.getElementById('board');
+const ctx  = cvs.getContext('2d');
+const hidI = document.getElementById('hidden-input');
+const statsEl = document.getElementById('stats');
+const diffSel = document.getElementById('difficulty');
+const qCntSel = document.getElementById('q-count');
+const choiceBox = document.getElementById('choice-box');
+
+/* ====== 画面サイズ ====== */
+const BASE_W = 600, BASE_H = 380;
+let scale = 1;
+function resize(){
+  const w = Math.min(window.innerWidth*0.95, 700);
+  cvs.width  = w;
+  cvs.height = w*(BASE_H/BASE_W);
+  scale = cvs.width/BASE_W;
+  draw();
+}
+window.addEventListener('resize',resize);
+
+/* ====== 状態 ====== */
+let state = 'set';     // set / play / feed / end / review
 let difficulty = 'std';
+let total=10, cur=0, score=0;
+let qs=[], mistakes=[], curAnswer='';
 
-/* --- 小１用の問題 --- */
-function generateG1Question() {
-  const op = Math.random() < 0.5 ? '+' : '-';
-  let a, b, ans;
-  if (op === '+') {
-    a = getRandomInt(0, 10);
-    b = getRandomInt(0, 10 - a);
-    ans = a + b;
-  } else {
-    a = getRandomInt(0, 10);
-    b = getRandomInt(0, a);
-    ans = a - b;
-  }
-  return { question: `${a} ${op} ${b} = ?`, answer: ans, type: 'int' };
+/* ====== 音 ====== */
+let synth = new Tone.Synth().toDestination();
+
+/* ====== ユーティリティ ====== */
+const rndInt = (a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+
+/* ====== G1 (小１) 問題 ====== */
+function genG1(){
+  const op = Math.random()<0.5?'+':'-';
+  let a,b,ans;
+  if(op==='+'){ a=rndInt(0,10); b=rndInt(0,10-a); ans=a+b; }
+  else        { a=rndInt(0,10); b=rndInt(0,a);   ans=a-b; }
+  return {q:`${a} ${op} ${b} = ?`, a:ans, type:'int'};
 }
 
-/* --- generateQuestions をラップ --- */
-const _genQs = generateQuestions;
-generateQuestions = function (n) {
-  questions = [];
-  if (difficulty === 'g1') {
-    for (let i = 0; i < n; i++) questions.push(generateG1Question());
-  } else {
-    _genQs(n);           // 元の高度な問題
-  }
-};
+/* ====== 標準モード：分数・小数 (簡易版) ====== */
+function gcd(x,y){return y?gcd(y,x%y):x;}
+function simp(n,d){const g=gcd(Math.abs(n),d);n/=g;d/=g;return{n,d};}
+function fStr({n,d}){return d===1?`${n}`:`${n}/${d}`;}
 
-/* --- 三択ボタン UI --- */
-const choiceArea = document.getElementById('choice-buttons');
-function showChoiceButtons(correct) {
-  choiceArea.innerHTML = '';
-  choiceArea.classList.remove('hidden');
-  const list = [correct];
-  while (list.length < 3) {
-    const v = getRandomInt(0, 20);
-    if (!list.includes(v)) list.push(v);
+function randFrac(){let d=rndInt(2,9), n=rndInt(1,d-1); return simp(n,d);}
+function plusF(){const f1=randFrac(),f2=randFrac();const l=f1.d*f2.d/gcd(f1.d,f2.d);const n=f1.n*(l/f1.d)+f2.n*(l/f2.d);return{q:`${fStr(f1)} + ${fStr(f2)} = ?`,a:simp(n,l),type:'frac'};}
+function minusF(){let f1=randFrac(),f2=randFrac();if(f1.n/f1.d<f2.n/f2.d)[f1,f2]=[f2,f1];const l=f1.d*f2.d/gcd(f1.d,f2.d);const n=f1.n*(l/f1.d)-f2.n*(l/f2.d);return{q:`${fStr(f1)} - ${fStr(f2)} = ?`,a:simp(n,l),type:'frac'};}
+
+function randDec(){return Math.round(Math.random()*100)/10;} // 0.0 – 10.0
+function plusD(){const x=randDec(),y=randDec();return{q:`${x} + ${y} = ?`,a:Math.round((x+y)*10)/10,type:'dec'};}
+function minusD(){let x=randDec(),y=randDec();if(x<y)[x,y]=[y,x];return{q:`${x} - ${y} = ?`,a:Math.round((x-y)*10)/10,type:'dec'};}
+
+const genPool=[plusF,minusF,plusD,minusD];
+function genStd(){
+  const g=genPool[rndInt(0,genPool.length-1)];
+  return g();
+}
+
+/* ====== 質問生成 ====== */
+function makeQs(){
+  qs.length=0; mistakes.length=0;
+  for(let i=0;i<total;i++){
+    qs.push(difficulty==='g1'?genG1():genStd());
   }
-  list.sort(() => Math.random() - 0.5);
-  list.forEach(v => {
-    const btn = document.createElement('button');
-    btn.textContent = v;
-    btn.className =
-      'choice-btn bg-white rounded-lg border border-gray-300 shadow text-lg font-bold active:scale-95 transition';
-    btn.onclick = () => {
-      hiddenInput.value = v;
-      checkAnswer();
-    };
-    choiceArea.appendChild(btn);
+}
+
+/* ====== 描画 ====== */
+function draw(){
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+
+  // プログレス
+  if(state!=='set'){
+    const p=(state==='feed'||state==='end')?(cur+1)/total:cur/total;
+    const w=cvs.width*0.6, h=10*scale, x=(cvs.width-w)/2, y=40*scale;
+    ctx.fillStyle='#e0e0e0';ctx.fillRect(x,y,w,h);
+    ctx.fillStyle='#34d399';ctx.fillRect(x,y,w*p,h);
+  }
+
+  if(state==='set'){
+    ctx.font=`${32*scale}px sans-serif`;
+    ctx.fillStyle='#111';
+    ctx.textAlign='center';
+    ctx.fillText('スタートを押してね',cvs.width/2,150*scale);
+    return;
+  }
+
+  const qObj=qs[cur];
+  if(!qObj)return;
+
+  ctx.font=`bold ${28*scale}px 'M PLUS Rounded 1c'`;
+  ctx.fillStyle='#111';
+  ctx.textAlign='center';
+  ctx.fillText(qObj.q,cvs.width/2,120*scale);
+
+  if(difficulty==='std'){
+    // 入力枠
+    const boxW=cvs.width*0.7, boxH=46*scale, bx=(cvs.width-boxW)/2, by=160*scale;
+    ctx.strokeStyle='#a0aec0'; ctx.strokeRect(bx,by,boxW,boxH);
+    ctx.font=`${24*scale}px sans-serif`;ctx.textAlign='left';
+    ctx.fillText(curAnswer,bx+10*scale,by+30*scale);
+    if(document.activeElement===hidI && (Date.now()>>9)%2){
+      const w=ctx.measureText(curAnswer).width;
+      ctx.fillRect(bx+10*scale+w,by+8*scale,2*scale,boxH-16*scale);
+    }
+  }
+}
+
+/* ====== UI ヘルパ ====== */
+function show(el){el.classList.remove('hidden');}
+function hide(el){el.classList.add('hidden');}
+function switchCtrl(mode){
+  hide(document.getElementById('set-ctrl'));
+  hide(document.getElementById('play-ctrl'));
+  hide(document.getElementById('end-ctrl'));
+  hide(document.getElementById('rev-ctrl'));
+  if(mode==='set')   show(document.getElementById('set-ctrl'));
+  if(mode==='play')  show(document.getElementById('play-ctrl'));
+  if(mode==='end')   show(document.getElementById('end-ctrl'));
+  if(mode==='review')show(document.getElementById('rev-ctrl'));
+}
+
+/* ====== 小１三択 ====== */
+function buildChoices(correct){
+  choiceBox.innerHTML='';
+  const list=[correct];
+  while(list.length<3){
+    const n=rndInt(0,20);
+    if(!list.includes(n))list.push(n);
+  }
+  list.sort(()=>Math.random()-0.5);
+  list.forEach(n=>{
+    const b=document.createElement('button');
+    b.textContent=n;
+    b.className='choice-btn bg-white border rounded-lg text-xl font-bold px-4 shadow active:scale-95';
+    b.onclick=()=>{hidI.value=n;submit();}
+    choiceBox.appendChild(b);
   });
+  show(choiceBox);
 }
-function hideChoiceButtons() {
-  choiceArea.classList.add('hidden');
+function hideChoices(){hide(choiceBox);}
+
+/* ====== 統計 ====== */
+function updateStats(){
+  const tried=cur, rate=tried?((score/tried)*100).toFixed(1):'---';
+  statsEl.textContent=`正答率 ${rate}% (${score}/${tried})`;
 }
 
-/* --- drawTrainingScreen の差し替え --- */
-const _drawTraining = drawTrainingScreen;
-drawTrainingScreen = function () {
-  if (difficulty === 'g1') {
-    drawProgressBar();
-    const q = questions[currentQuestionIndex];
-    const f = Math.round(BASE_FONT_SIZE_L * scale);
-    drawText(q.question, canvas.width / 2, BASE_QUESTION_Y * scale,
-      `bold ${f}px "M PLUS Rounded 1c"`, '#333');
-    if (choiceArea.classList.contains('hidden')) showChoiceButtons(q.answer);
-  } else {
-    hideChoiceButtons();
-    _drawTraining();
+/* ====== ロジック ====== */
+function start(){
+  difficulty=diffSel.value;
+  total=parseInt(qCntSel.value,10);
+  cur=score=0; curAnswer='';
+  makeQs();
+  state='play';
+  switchCtrl('play');
+  updateStats();
+  if(difficulty==='g1'){
+    hidI.blur();buildChoices(qs[0].a);
+    hide(document.getElementById('btn-submit'));
+  }else{
+    hideChoices();
+    show(document.getElementById('btn-submit'));
+    hidI.value='';hidI.focus();
   }
-};
-
-/* --- startTraining をフック --- */
-const _start = startTraining;
-startTraining = async function () {
-  difficulty = difficultySelect.value;
-  hideChoiceButtons();
-  await _start();
-  if (difficulty === 'g1') submitButton.classList.add('hidden');
-  else submitButton.classList.remove('hidden');
-};
-
-/* --- checkAnswer 後に選択肢を隠す --- */
-const _check = checkAnswer;
-checkAnswer = function () {
-  _check();
-  if (difficulty === 'g1' &&
-      (gameState === 'feedback' || gameState === 'finished')) {
-    hideChoiceButtons();
+  resize();
+}
+function submit(){
+  const q=qs[cur];
+  let ok=false;
+  if(difficulty==='g1'){
+    ok=parseInt(hidI.value,10)===q.a;
+  }else{
+    const val=hidI.value.trim();
+    if(q.type==='int' || q.type==='dec'){ ok=Math.abs(parseFloat(val)-q.a)<1e-6; }
+    if(q.type==='frac'){
+      const m=val.match(/^(\d+)\/(\d+)$/); if(m){
+        const n=parseInt(m[1],10),d=parseInt(m[2],10);
+        const ans=q.a; ok=n===ans.n&&d===ans.d;
+      }
+    }
   }
-};
+  if(ok){score;synth.triggerAttackRelease("C5","8n");}
+  else {mistakes.push({idx:cur+1,q:q.q,ans:q.a,your:hidI.value});}
+  curAnswer='';
+  state='feed';
+  switchCtrl('play');
+  document.getElementById('btn-submit').classList.add('hidden');
+  document.getElementById('btn-next').classList.remove('hidden');
+  updateStats();
+  draw();
+  if(difficulty==='g1') hideChoices();
+}
+function next(){
+  cur++;
+  if(cur>=total){finish();return;}
+  state='play';
+  document.getElementById('btn-next').classList.add('hidden');
+  if(difficulty==='g1'){
+    buildChoices(qs[cur].a);
+  }else{
+    document.getElementById('btn-submit').classList.remove('hidden');
+    hidI.value='';hidI.focus();
+  }
+  draw();
+}
+function finish(){
+  state='end';
+  switchCtrl('end');
+  hideChoices();
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+  ctx.font=`bold ${32*scale}px sans-serif`;ctx.fillStyle='#111';ctx.textAlign='center';
+  ctx.fillText(`終了！${total}問中 ${total-mistakes.length} 問正解`,cvs.width/2,120*scale);
+}
+function review(){
+  state='review';
+  switchCtrl('review');
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+  ctx.font=`bold ${24*scale}px sans-serif`;ctx.textAlign='center';
+  if(!mistakes.length){ctx.fillText('間違いはありませんでした！',cvs.width/2,120*scale);return;}
+  ctx.fillText('間違い一覧',cvs.width/2,40*scale);
+  ctx.textAlign='left'; ctx.font=`${16*scale}px monospace`;
+  mistakes.forEach((m,i)=>ctx.fillText(`${m.idx}. ${m.q} → 正:${typeof m.ans==='object'?fStr(m.ans):m.ans} / あなた:${m.your}`,10*scale,(80+i*24)*scale));
+}
 
-/* --- 数値だけを許可 --- */
-const _parse = parseAnswerInput;
-parseAnswerInput = function (s) {
-  if (difficulty === 'g1') return parseInt(s, 10);
-  return _parse(s);
-};
+/* ====== イベント ====== */
+document.getElementById('btn-start').onclick=start;
+document.getElementById('btn-submit').onclick=submit;
+document.getElementById('btn-next').onclick=next;
+document.getElementById('btn-retry').onclick=()=>{state='set';switchCtrl('set');draw();};
+document.getElementById('btn-review').onclick=review;
+document.getElementById('btn-back').onclick=()=>{state='set';switchCtrl('set');draw();};
 
-/* --- イベント --- */
-difficultySelect.addEventListener('change', () => {
-  difficulty = difficultySelect.value;
-});
-/* ===================== 追加パッチここまで ===================== */
+hidI.addEventListener('input',e=>{curAnswer=e.target.value;draw();});
+hidI.addEventListener('keypress',e=>{if(e.key==='Enter'&&state==='play')submit();});
+cvs.addEventListener('click',()=>{if(state==='play'&&difficulty==='std'){hidI.focus();}});
+
+/* ====== 初期化 ====== */
+switchCtrl('set');
+resize();
+draw();
+</script>
+</body>
+</html>
